@@ -17,7 +17,21 @@ from . import views
 
 urlpatterns = (
     url(r"^$", views.home),
-    url(r"^dev-guide/$", views.dev_guide),
-    url(r"^contact/$", views.contact),
-    url(r'^helloworld/$', views.helloworld),
+    url(r"^search_business/$", views.search_business, name="业务信息"),
+    url(r"^search_module/$", views.search_module, name="查询业务实例拓扑"),
+    url(r"^search_biz_inst_topo/$", views.search_biz_inst_topo, name="查询业务实例拓扑"),
+    url(r"^list_biz_hosts/$", views.list_biz_hosts, name="业务下的主机"),
+
+    #### 主机操作
+    url(r"^get_host_base_info/$", views.get_host_base_info, name="主机信息"),
+
+    #url(r"^clone_host_property/$", views.clone_host_property, name="克隆属性"),
+
+    url(r"^transfer_host_module/$", views.transfer_host_module, name="转移模块"),
+
+
+    # 操作记录
+    url(r"^record_page/$", views.record_page, name="操作记录页面"),
+    url(r"^record_lists/$", views.record_lists, name="操作记录日志"),
+    url(r"^record_lists/$", views.record_lists, name="操作记录数据"),
 )

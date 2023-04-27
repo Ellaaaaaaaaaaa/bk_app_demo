@@ -1,30 +1,504 @@
+{#{% extends "base.html" %}#}
+{#{% load i18n %}#}
+{#{% block head %}#}
+{#	<title>{%trans "蓝鲸开发框架" %}</title>#}
+{#	{{ block.super }}#}
+{#{% endblock %}#}
+{##}
+{#{% block content %}#}
+{#    <div class="home-page">#}
+{#    	<div class="page-arrow">#}
+{#			<div class="container">#}
+{#				<!-- 蓝鲸智云开发框架说明  Start -->#}
+{#				<div class="tc title-word">#}
+{#					<p>{%trans "欢迎使用蓝鲸智云PaaS平台" %}</p>#}
+{#				</div>#}
+{#				<div class="tc title-word-second">#}
+{#					<p>{%trans "蓝鲸智云开发框架" %}<small class="pl10">{%trans "助力你的自动化" %}</small></p>#}
+{#				</div>#}
+{#				<hr class="cutting-line">#}
+{#				<div class="tc frame-explain-text">#}
+{#					<p>{%trans "您现在打开的应用是由蓝鲸智云示例代码生成的，该示例代码称为“SaaS开发框架”。" %}</p>#}
+{#					<p>{%trans "蓝鲸智云PaaS平台提供了完善的前后台开发框架、调度引擎、公共组件等模块，帮助业务的产品和技术人员快速构建低成本、免运维的支撑工具和运营系统。" %}</p>#}
+{#					<p>{%trans "若想体验快速开发应用的功能，请前往" %}<a class="developer-center" href="{{ BK_DEV_URL }}" target="_blank">{%trans "“开发者中心”" %}</a>{%trans "。" %}</p>#}
+{#				</div>#}
+{#				<!-- 蓝鲸智云开发框架说明  End -->#}
+{#			</div>#}
+{#		</div>#}
+{#    </div>#}
+{#{% endblock %}#}
+{##}
+
 {% extends "base.html" %}
 {% load i18n %}
 {% block head %}
-	<title>{%trans "蓝鲸开发框架" %}</title>
-	{{ block.super }}
+    <title>{% trans "游戏业务管理" %}</title>
+    {{ block.super }}
+    <style>
+        .operator {
+            float: right;
+        }
+
+        .operator-btn {
+            padding: 0 2px;
+            height: 20px;
+            float: right;
+            margin: 6px 5px 0 0;
+            display: none;
+        }
+
+        .bk-dropdown-menu {
+            margin: 10px 5px 10px 0;
+        }
+
+        .td-bg {
+            color: #f0f0f0;
+            width: 300px;
+            background-color: #d1d0d0;
+            font-weight: bold;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-    <div class="home-page">
-    	<div class="page-arrow">
-			<div class="container">
-				<!-- 蓝鲸智云开发框架说明  Start -->
-				<div class="tc title-word">
-					<p>{%trans "欢迎使用蓝鲸智云PaaS平台" %}</p>
-				</div>
-				<div class="tc title-word-second">
-					<p>{%trans "蓝鲸智云开发框架" %}<small class="pl10">{%trans "助力你的自动化" %}</small></p>
-				</div>
-				<hr class="cutting-line">
-				<div class="tc frame-explain-text">
-					<p>{%trans "您现在打开的应用是由蓝鲸智云示例代码生成的，该示例代码称为“SaaS开发框架”。" %}</p>
-					<p>{%trans "蓝鲸智云PaaS平台提供了完善的前后台开发框架、调度引擎、公共组件等模块，帮助业务的产品和技术人员快速构建低成本、免运维的支撑工具和运营系统。" %}</p>
-					<p>{%trans "若想体验快速开发应用的功能，请前往" %}<a class="developer-center" href="{{ BK_DEV_URL }}" target="_blank">{%trans "“开发者中心”" %}</a>{%trans "。" %}</p>
-				</div>
-				<!-- 蓝鲸智云开发框架说明  End -->
-			</div>
-		</div>
+    <div class="page-contactus">
+        <div style="width: 250px; float: left;margin: 0 10px; height: 500px">
+            <div style=" margin: 10px 0 0 20px">
+                <span style="font-weight: bold;">选择业务</span>
+                <div style="width: 200px">
+                    <select id="search_biz_inst_topo" class="bk-form-select" onchange="search_biz_inst_topo()">
+                    </select>
+                </div>
+            </div>
+
+            <div style=" margin: 10px 0 10px 20px">
+                <span style="font-weight: bold;">选择拓扑</span>
+            </div>
+            <div class="bk-tree" id="bk-tree">
+                <ul class="tree-content" id="bk-ul-tops">
+                </ul>
+            </div>
+        </div>
+
+        <div class="bk-tab2 bk-tab2-small" style="margin-left: 280px" id="bk-tab2">
+            <div class="bk-tab2-head">
+                <ul class="bk-tab2-nav">
+                    <li class="tab2-nav-item active">业务资源</li>
+                    <li class="tab2-nav-item" style="display: none">服务实例</li>
+                    <li class="tab2-nav-item" style="display: none">业务拓扑</li>
+                    <li class="tab2-nav-item">业务信息</li>
+                </ul>
+            </div>
+            <div class="bk-tab2-content">
+                <!-- 业务资源 -->
+                <div class="bk-tab2-pane p15 active">
+                    <div class="f12">
+                        <div style="min-width: 80%">
+                            <div style="display: none">
+                                配置平台资源信息
+                                <span class="bk-tag">主机：</span>
+                                <span class="bk-tag bk-gray">业务：</span>
+                                <span class="bk-tag bk-light-gray">业务集：</span>
+                                <button class="bk-tag bk-primary">交换机：</button>
+                                <span class="bk-tag bk-danger">路由器：</span>
+                                <span class="bk-tag bk-success">负载均衡：</span>
+                                <span class="bk-tag bk-warning">防火墙：</span>
+                            </div>
+                            <div class="bk-panel-header" style="display: none">
+                                <div class="bk-form bk-inline-form">
+                                    <div class="bk-form-item">
+                                        <label class="bk-label">业务：</label>
+                                        <div class="bk-form-content">
+                                            <select name="" id="search_biz_infos" class="bk-form-select"
+                                                    onchange="search_biz_infos()" style="width: 250px">
+                                                {% for biz in bizs %}
+                                                    <option value="{{ biz.bk_biz_id }}">
+                                                        [{{ biz.bk_biz_id }}]&nbsp;{{ biz.bk_biz_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bk-collapse-panel">
+                                <div class="panel-header" role="tab">
+                                    <a data-toggle="collapse" class="panel-icon panel-spread"></a>
+                                    <h3 data-toggle="collapse" class="panel-title" aria-expanded="true">主机列表</h3>
+                                </div>
+                                <div id="panel-content2" class="panel-body panel-collapse p0 collapse in"
+                                     aria-expanded="true" style="">
+                                    <!-- 表格 -->
+                                    <table id="hosts" class="bk-table bk-table-header-bordered">
+                                        <thead>
+                                        <tr>
+                                            <th>序号</th>
+                                            <th>主机ID</th>
+                                            <th>云区域ID</th>
+                                            <th>内网IP</th>
+                                            <th>主机名</th>
+                                            <th>OS类型</th>
+                                            <th>MAC地址</th>
+                                            <th>操作</th>
+                                        </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 服务实例 -->
+                <div class="bk-tab2-pane p15">
+                    <div class="f12"></div>
+                </div>
+                <!-- 业务拓扑 -->
+                <div class="bk-tab2-pane p15">
+                    <div class="bk-collapse-panel">
+                        <div id="biztop" style="width: 920px; height:980px"></div>
+                    </div>
+                </div>
+                <!-- 节点信息 -->
+                <div class="bk-tab2-pane p15">
+                    <div class="bk-collapse-panel">
+                        <div class="panel-header" role="tab">
+                            <a data-toggle="collapse" class="panel-icon panel-spread"></a>
+                            <h3 data-toggle="collapse" class="panel-title" aria-expanded="true">基础信息</h3>
+                        </div>
+                        <div id="node-information1"></div>
+                    </div>
+
+                    <div class="bk-collapse-panel">
+                        <div class="panel-header" role="tab">
+                            <a data-toggle="collapse" class="panel-icon panel-spread"></a>
+                            <h3 data-toggle="collapse" class="panel-title" aria-expanded="true">角色</h3>
+                        </div>
+                        <div id="node-information2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+
+    <div id="os_type" style="display: none;">{{ os_type }}</div>
 {% endblock %}
 
+{% block extra_block %}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/daterangepicker-2.0.5/moment.min.js"></script>
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/daterangepicker-2.0.5/daterangepicker.js"></script>
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/umeditor-1.2.2/umeditor.config.js"></script>
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/umeditor-1.2.2/umeditor.min.js"></script>
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/umeditor-1.2.2/lang/zh-cn/zh-cn.js"></script>
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/select2-3.5.2/select2.js"></script>
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/bkSwitcher-1.0/js/bkSwitcher.js"></script>
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/validate-1.14.0/js/jquery.validate.js"></script>
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/bkDropdownMenu-1.0/js/bkDropdownMenu.js"></script>
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/bkTab-1.0/js/bkTab.js"></script>
+    <script>
+        var os_type = JSON.parse(document.getElementById("os_type").innerText);
+        $.ajax({
+            url: "{{ SITE_URL }}search_business/",
+            method: 'post',
+            success: function (data) {
+                var biz_topo = "";
+                data.data.info.forEach(biz => {
+                    biz_topo += '<option value=' + biz.bk_biz_id + '>[' + biz.bk_biz_id + '] ' + biz.bk_biz_name + '</option>';
+                    sessionStorage.setItem(biz.bk_biz_id, JSON.stringify({
+                        "bk_biz_name": biz.bk_biz_name,
+                        "time_zone": biz.time_zone,
+                        "language": biz.language,
+                        "life_cycle": biz.life_cycle,
+                        "create_time": biz.create_time,
+                        "bk_biz_maintainer": biz.bk_biz_maintainer,
+                        "bk_biz_developer": biz.bk_biz_developer,
+                        "bk_biz_productor": biz.bk_biz_productor,
+                        "bk_biz_tester": biz.bk_biz_tester,
+                        "operator": biz.operator
+                    }));
+                })
+                document.getElementById("search_biz_inst_topo").innerHTML = biz_topo;
+                node_infomation();
+
+            }
+        });
+        // 选项卡
+        $('.bk-tab2').bkTab({
+            tabTriggers: '.tab2-nav-item',
+            tabPanels: '.bk-tab2-pane',
+            onTabChange: function (index, tab) {
+            }
+        });
+
+        // 拓扑导航栏
+        $('.bk-tree').on('click', 'a', function (event) {
+            $('.module').removeClass('open');
+            if ($(this).parent('li').hasClass('module')) {
+                var bk_module_id = $(this).parent('li').attr("module_id");
+
+            } else if ($(this).parent('li').hasClass('set')) {
+                $('.set').removeClass('open');
+                var bk_set_id = $(this).parent('li').attr("set_id");
+            } else {
+                $('.set').removeClass('open');
+            }
+            $(this).parent('li').toggleClass('open');
+            businessInfo.ajax.reload()
+        });
+
+        $("#bk-ul-tops").hover(function () {
+                $(".operator-btn").show();
+            },
+            function () {
+                $(".operator-btn").hide();
+            }
+        )
+
+        //表格(DataTables)
+        var language = {
+            search: "{% trans '搜索：' %}",
+            lengthMenu: "{% trans '每页显示 _MENU_ 记录' %}",
+            zeroRecords: "{% trans '没找到相应的数据！' %}",
+            info: "{% trans '分页 _PAGE_ / _PAGES_ 共 _TOTAL_ 条' %}",
+            infoEmpty: "{% trans '暂无数据！' %}",
+            infoFiltered: "{% trans '(从 _MAX_ 条数据中搜索)' %}",
+            paginate: {
+                previous: "{% trans '上一页' %}",
+                next: "{% trans '下一页' %}",
+            }
+        }
+        // 业务主机资源
+        var businessInfo = $("#hosts").DataTable({
+            sProcessing: '<img alt="loadding" src="https://magicbox.bk.tencent.com/static_api/v3/components/loading1/images/loading_2_36x36.gif">',//这里很重要，如果你的加载中是文字，则直接写上文字即可，如果是gif的图片，使用img标签就可以加载
+            pagingType: "simple_numbers",
+            paging: true, //隐藏分页
+            pageLength: 10, //每页显示几条数据
+            language: language, //汉化
+            serverSide: true,
+            ajax: {
+                url: '{{ SITE_URL }}list_biz_hosts/',
+                method: "post",
+                dataType: 'json',
+                data: function (d) {
+                    return JSON.stringify({
+                        "bk_set_id": $(".set.open").attr("set_id"),
+                        "bk_module_id": $(".module.open").attr("module_id"),
+                        "start": d.start,
+                        "length": d.length
+                    });
+                },
+
+            },
+            columns: [
+                {
+                    width: 40,
+                    tatgets: 0,
+                    data: null,
+                    render: function (data, type, row, meta) {
+                        return meta.row + 1;
+                    }
+                },
+                {
+                    width: 40,
+                    tatgets: 1,
+                    data: "bk_host_id",
+                },
+                {
+                    width: 40,
+                    tatgets: 2,
+                    data: "bk_cloud_id",
+                },
+                {
+                    width: 80,
+                    tatgets: 3,
+                    data: "bk_host_innerip",
+                },
+                {
+                    width: 80,
+                    tatgets: 4,
+                    data: "bk_host_name",
+                },
+                {
+                    width: 50,
+                    tatgets: 5,
+                    data: "bk_os_type",
+                    render: function (data, type, row, meta) {
+                        return null != data ? "<span class=\"bk-tag is-fill bk-success\">" + os_type[data] + "</span>" : "<span class=\"bk-tag is-fill bk-danger\">未知</span>";
+                    }
+                },
+                {
+                    width: 80,
+                    tatgets: 6,
+                    data: "bk_mac",
+                },
+                {
+                    width: 120,
+                    tatgets: 7,
+                    data: "bk_host_id",
+                    render: function (data) {
+                        return '<a class="bk-text-button bk-info" onclick="clone_host_property(this)">克隆属性</a><a class="bk-text-button bk-info" onclick="transfer_host_module(' + data + ')">转移模块</a><a class="bk-text-button bk-info" target="_blank" title="查看详情" href="get_host_base_info/?bk_host_id=' +
+                            data + '">查看详情</a>';
+                    }
+                }
+            ],
+        });
+
+        search_biz_inst_topo();
+
+        // 业务信息，不做强要求
+        function node_infomation() {
+            var bk_biz_id = $('#search_biz_inst_topo option:selected').val();
+            var nodeinfo = JSON.parse(sessionStorage.getItem(bk_biz_id));
+
+            document.getElementById('node-information1').innerHTML = '<table class="bk-table has-table-striped"> <tbody> ' +
+                '<tr> <td class="td-bg">ID</td> <td style="width: 22%">' + bk_biz_id + '</td> <td class="td-bg">业务名</td> <td>' + nodeinfo.bk_biz_name + '</td> </tr> ' +
+                '<tr> <td class="td-bg">时区</td> <td style="width: 22%">' + nodeinfo.time_zone + '</td> <td class="td-bg">语言</td> <td>' + nodeinfo.language + '</td> </tr> ' +
+                '<tr> <td class="td-bg">生命周期</td> <td style="width: 22%">' + nodeinfo.life_cycle + '</td> <td class="td-bg">创建时间</td> <td>' + nodeinfo.create_time + '</td> </tr> </tbody> </table>';
+            document.getElementById('node-information2').innerHTML = '<table class="bk-table has-table-striped"> <tbody> ' +
+                '<tr> <td class="td-bg">运维人员</td> <td style="width: 22%">' + nodeinfo.bk_biz_maintainer + '</td> <td class="td-bg">开发人员</td> <td>' + nodeinfo.bk_biz_developer + '</td> </tr> ' +
+                '<tr> <td class="td-bg">产品人员</td> <td style="width: 22%">' + nodeinfo.bk_biz_productor + '</td> <td class="td-bg">测试人员</td> <td>' + nodeinfo.bk_biz_tester + '</td> </tr> ' +
+                '<tr> <td class="td-bg">操作人员</td> <td style="width: 22%">' + nodeinfo.operator + '</td></tr> </tbody> </table>'
+        }
+
+        // 克隆主机属性
+        function clone_host_property(event) {
+
+            var src_ip = event.parentNode.parentNode.childNodes[3].textContent
+            var dialog = new bkDialog({
+                type: 'dialog',
+                width: 400,
+                padding: 20,
+                content: '<label >克隆属性至主机:</label><input class="bk-form-input" style="width: 100%;" id="to_host" placeholder="请输入要克隆的主机...">',
+                hasHeader: false,
+                closeIcon: false,
+                confirmFn: function (e) {
+                    var dst_ip = $("#to_host").val()
+                    $.ajax({
+                        url: '{{ SITE_URL }}clone_host_property/',
+                        method: 'post',
+                        data: JSON.stringify({
+                            "bk_org_ip": src_ip,
+                            "bk_dst_ip": dst_ip
+                        }),
+                        success: function (json) {
+                            if (!json.result) {
+                                var errorMessage = new bkMessage({
+                                    message: "克隆主机失败：" + json.message,
+                                    theme: 'error'
+                                });
+
+                            } else {
+
+                                var successMessage = new bkMessage({
+                                    message: '克隆主机' + src_ip + "的属性至" + dst_ip + "成功",
+                                    theme: 'success'
+                                });
+                                businessInfo.ajax.reload()
+
+                            }
+                        }
+                    });
+                }
+            });
+            dialog.show()
+        }
+
+        // 转移主机模块
+        function transfer_host_module(host_id) {
+            var options = ""
+            // 获取模块列表数据
+            biz_modules.forEach(function (item) {
+                // 点击转移按钮，发送数据到转移接口
+                options += '<option value="' + item.bk_module_id + '">' + item.bk_module_name + '</option>'
+            })
+
+            var dialog = new bkDialog({
+                type: 'dialog',
+                width: 400,
+                padding: 20,
+                content: '<label >转移主机至模块:</label><select class="bk-form-select" style="width: 100%;" id="to_biz_module">' + options + "</select>",
+                hasHeader: false,
+                closeIcon: false,
+                confirmFn: function (e) {
+                    var module_id = parseInt($("#to_biz_module").val());
+                    $.ajax({
+                        url: "{{ SITE_URL }}transfer_host_module/",
+                        method: 'POST',
+                        data: JSON.stringify({
+                            "bk_host_id": host_id,
+                            "bk_module_id": [module_id],
+                            "is_increment": 0
+                        }),
+                        dataType: 'json',
+                        success: function (json) {
+                            if (!json.result) {
+                                var errorMessage = new bkMessage({
+                                    message: "转移模块失败：" + json.message,
+                                    theme: 'error'
+                                });
+
+                            } else {
+                                debugger
+                                var successMessage = new bkMessage({
+                                    message: '转移主机至模块[' + module_id + "]成功",
+                                    theme: 'success'
+                                });
+                                businessInfo.ajax.reload()
+                            }
+                        }
+                    });
+                }
+            });
+            dialog.show()
+
+        }
+
+        var biz_modules = new Array()
+
+        function search_biz_inst_topo() {
+            businessInfo.ajax.reload();
+            biz_modules = []
+            $.ajax({
+                url: "{{ SITE_URL }}search_biz_inst_topo/",
+                method: 'post',
+                data: JSON.stringify({
+                    "bk_biz_id": parseInt($("#search_biz_inst_topo option:selected").val()),
+                }),
+                success: function (json) {
+                    var bk_ul_tops = '<li class="folder open"><a href="javascript:;"><i class="bk-icon icon-apps"></i> 业-'
+                        + json.bk_inst_name + '</a><a href="#setOperator" data-toggle="modal" data-target="#setOperator"></a>';
+                    var sub_str1 = "";
+                    module_nums = 0;
+                    if (json.child.length > 0) {
+                        sub_str1 += '<ul class="tree-secondary">';
+                        var sub_str2 = "";
+                        json.child.forEach(function (set) {
+                            sub_str2 += '<li class="folder set" set_id="' + set.bk_inst_id + '"><a href="javascript:;" ><i class="bk-icon icon-panels"></i> 集-' + set.bk_inst_name + '</a>' +
+                                '<a href="#moduleOperator" data-toggle="modal" data-target="#moduleOperator"></a>';
+
+                            if (set.child.length > 0) {
+                                module_nums += set.child.length;
+                                sub_str2 += '<ul>';
+                                var sub_str3 = "";
+                                set.child.forEach(function (module) {
+                                    sub_str3 += '<li class="file module" module_id="' + module.bk_inst_id + '"><a href="javascript:;" ><i class="tree-icon"></i>模-' + module.bk_inst_name + '</a>' + '</li>';
+                                    biz_modules.push({
+                                        "bk_module_id": module.bk_inst_id,
+                                        "bk_module_name": set.bk_inst_name + "-" + module.bk_inst_name
+
+                                    })
+                                });
+                                sub_str2 += sub_str3 + '</ul>';
+                            }
+
+                            sub_str2 += '</li>';
+                        });
+                        sub_str1 += sub_str2 + "</ul>";
+                    }
+                    document.getElementById("bk-ul-tops").innerHTML = bk_ul_tops + sub_str1 + '</li>';
+                }
+            });
+
+        }
+    </script>
+{% endblock %}

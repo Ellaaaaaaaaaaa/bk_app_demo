@@ -1,0 +1,85 @@
+{#<!DOCTYPE html>#}
+{#<html lang="en">#}
+{#<head>#}
+{#    <meta charset="UTF-8">#}
+{#    <title>Title</title>#}
+{#</head>#}
+{#<body>#}
+{#    <div class="page-content">#}
+{#        <div class="bk-collapse-panel">#}
+{#            <div class="panel-header" role="tab">#}
+{#                <a data-toggle="collapse" class="panel-icon panel-spread"></a>#}
+{#                <h3 data-toggle="collapse" class="panel-title" aria-expanded="true">主机详情</h3>#}
+{#            </div>#}
+{#            <div class="panel-body panel-collapse p0 collapse in" aria-expanded="true">#}
+{#                <table class="bk-table bk-table-header-border">#}
+{#                    <thead>#}
+{#                    <tr>#}
+{#                        <th>属性ID</th>#}
+{#                        <th>属性名称</th>#}
+{#                        <th>属性值</th>#}
+{#                    </tr>#}
+{#                    </thead>#}
+{#                    <tbody>#}
+{#                    {% for host in data %}#}
+{#                    <tr>#}
+{#                        <td>{{ fields|get_item:host.bk_property_id }}</td>#}
+{#                        <td>{{ host.bk_property_name }}</td>#}
+{#                        <td>{{ host.bk_property_value }}</td>#}
+{#                    </tr>#}
+{#                    {% endfor %}#}
+{#                    </tbody>#}
+{#                </table>#}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
+{#</body>#}
+{#</html>#}
+
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block head %}
+    <title> {% trans '主机详情 | 蓝鲸智云' %}</title>
+    {{ block.super }}
+{% endblock %}
+
+
+{% block content %}
+    <div class="page-content">
+        <ol class="breadcrumb detail-breadcrumb">
+            <li class="all pro-all"><a href="{{ SITE_URL }}">主页</a></li>
+            <li><a href="#">主机详情</a></li>
+        </ol>
+        <div class="bk-collapse-panel">
+            <div class="panel-header" role="tab">
+                <a data-toggle="collapse" class="panel-icon panel-spread"></a>
+                <h3 data-toggle="collapse" class="panel-title" aria-expanded="true">主机详情</h3>
+            </div>
+            <div class="panel-body panel-collapse p0 collapse in" aria-expanded="true">
+                <table class="bk-table bk-table-header-border">
+                    <thead>
+                    <tr>
+                        <th>属性ID</th>
+                        <th>属性名称</th>
+                        <th>属性值</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for host in data %}
+                        <tr>
+                            <td>{{ fields|get_item:host.bk_property_id }}</td>
+                            <td>{{ host.bk_property_name }}</td>
+                            {% if 'bk_os_type' == host.bk_property_id %}
+                                <td>{{ os_type|get_item:host.bk_property_value }}</td>
+                            {% else %}
+                                <td>{{ host.bk_property_value }}</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
