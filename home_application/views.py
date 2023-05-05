@@ -10,7 +10,7 @@ an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express o
 specific language governing permissions and limitations under the License.
 """
 import datetime
-import jsonschema
+#import jsonschema
 import json
 import logging
 from blueking.component.shortcuts import get_client_by_request
