@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Tencent is pleased to support the open source community by making 蓝鲸智云PaaS平台社区版 (BlueKing PaaS Community
 Edition) available.
@@ -10,7 +11,7 @@ an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express o
 specific language governing permissions and limitations under the License.
 """
 import datetime
-#import jsonschema
+import jsonschema
 import json
 import logging
 from blueking.component.shortcuts import get_client_by_request
@@ -18,18 +19,18 @@ from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.template.defaulttags import register
 from django.http import JsonResponse, HttpResponseNotAllowed
-from .models import Records
+from .models import Records, JobExecuteHistory
 
-# from home_application.schema import (
-#     CLONE_HOST_PROPERTY_PARAMS,
-# )
+from home_application.schema import (
+    CLONE_HOST_PROPERTY_PARAMS,
+)
 from django.conf import settings
 
 logger = logging.getLogger('auditLogger')
 
 """
     配置平台接口信息
-    https://apigw.paas-edu.bktencent.com/docs/component-api/default/CC/intro
+    https://apigw.ce.bktencent.com/docs/component-api/default/CC/intro
 """
 OS_TYPE = {"1": "Linux", "2": "Windows", "3": "AIX"}
 PLATFORMS = dict([
@@ -44,9 +45,6 @@ OPER_METHOD = dict([
     ("PATCH", "修改")
 ])
 
-# from home_application.schema import (
-#     CLONE_HOST_PROPERTY_PARAMS,
-# )
 
 # 开发框架中通过中间件默认是需要登录态的，如有不需要登录的，可添加装饰器login_exempt
 # 装饰器引入 from blueapps.account.decorators import login_exempt
@@ -71,7 +69,7 @@ def search_business(request):
 
 
 def list_biz_hosts_topo(request):
-    # 查询业务下的主机和拓扑信息  https://bkapi.paas-edu.bktencent.com/api/c/compapi/v2/cc/list_biz_hosts_topo/
+    # 查询业务下的主机和拓扑信息
     pramas = json.loads(request.body)
     bk_biz_id = pramas.get("bk_biz_id", None)
     bk_biz_name = pramas.get("bk_biz_name", "业务名称")
@@ -151,78 +149,6 @@ def list_biz_hosts(request):
     return JsonResponse(data)
 
 
-def list_biz_inst_topo(request):
-    # 查询业务下的业务拓扑信息
-    client = get_client_by_request(request)
-    resp = client.cc.list_biz_hosts_topo({
-        "bk_biz_id": settings.BK_BIZ_ID,
-    })
-
-    biz_data = resp["data"]
-    children = []
-    for biz_set in biz_data["child"]:
-        sub_children = []
-        for module in biz_set["child"]:
-            sub_children.append({
-                "name": f'模：[{module["bk_inst_id"]}] {module["bk_inst_name"]}',
-                "id": module["bk_inst_id"]
-            })
-        children.append({
-            "id": biz_set["bk_inst_id"],
-            "name": f'集：[{biz_set["bk_inst_id"]}] {biz_set["bk_inst_name"]}',
-            "children": sub_children
-        })
-    return JsonResponse(children)
-
-    # HOST_PROPERTIE_FIELDS 字段格式
-
-
-HOST_PROPERTIE_FIELDS = {
-    "bk_host_innerip": "内网IP",
-    "bk_host_outerip": "外网IP",
-    "bk_os_type": "操作系统类型",
-    "bk_host_name": "主机名称",
-    "bk_os_version": "系统版本",
-    "bk_os_name": "系统名称",
-    "bk_cpu": "CPU核心",
-    "bk_os_bit": "系统位数",
-    "bk_cpu_module": "CPU型号",
-    "bk_mem": "内存大小",
-    "bk_disk": "磁盘大小",
-    "bk_mac": "MAC地址",
-    "create_time": "创建时间",
-    "bk_cpu_architecture": "CPU架构",
-    "bk_host_innerip_v6": "内网IPv6",
-    "bk_host_outerip_v6": "外网IPv6",
-    "bk_agent_id": "GSE Agent ID",
-    "bk_outer_mac": "外网MAC地址",
-    "bk_cloud_vendor": "云厂商",
-    "bk_cloud_host_status": "云主机状态",
-    "bk_cloud_inst_id": "云实例ID",
-    "bk_state": "状态",
-    "import_from": "来源",
-    "bk_province_name": "省份名称",
-    "bk_cloud_id": "云区域ID",
-    "bk_sn": "序列号"
-}
-
-
-def get_host_base_info(request):
-    """
-    获取主机详情
-    """
-    bk_host_id = request.GET.get("bk_host_id", 0)
-    client = get_client_by_request(request)
-
-    response = client.cc.get_host_base_info({"bk_host_id": bk_host_id})
-    # 渲染模板返回
-    host_properties = response.get("data") if response.get("result", False) else []
-
-    return render(request, "home_application/host_detail.html", {"data": host_properties,
-                                                                 "os_type": OS_TYPE,
-                                                                 "fields": settings.HOST_PROPERTIE_FIELDS
-                                                                 })
-
 def get_host_base_info(request):
     """
     获取主机详情
@@ -242,38 +168,35 @@ def get_host_base_info(request):
                                                                  })
 
 
-
-# def clone_host_property(request):
-#     """
-#     机器属性管理 克隆主机属性
-#     """
-#     if not request.method.lower() == "post":
-#         return HttpResponseNotAllowed(permitted_methods=["POST"])
-#     params = json.loads(request.body)
-#     try:
-#         jsonschema.validate(params, CLONE_HOST_PROPERTY_PARAMS)
-#         bk_biz_id = settings.BK_BIZ_ID
-#         ip_kwargs = dict(
-#             bk_biz_id=bk_biz_id,
-#             bk_org_ip=params.get("bk_org_ip", None),
-#             bk_dst_ip=params.get("bk_dst_ip", None))
-#         client = get_client_by_request(request)
-#         results = client.cc.clone_host_property(ip_kwargs)
-#
-#         # 执行结果记录
-#         Records.objects.create(**{
-#             "operator": request.user.username,
-#             "operate_time": datetime.datetime.now(),
-#             "operate_action": "克隆主机属性",
-#             "operate_status": "SUCCESS" if results.get("result") else "FAILED",
-#             "input_params": params,
-#             "output_params": results
-#         })
-#         return JsonResponse(results)
-#     except jsonschema.ValidationError as e:
-#         response = {"result": False, "code": 1306406, "data": {},
-#                     "message": f"Validate Params error, detail: {e.message}"}
-#         return JsonResponse(response)
+def clone_host_property(request):
+    """
+    机器属性管理 克隆主机属性
+    """
+    if not request.method.lower() == "post":
+        return HttpResponseNotAllowed(permitted_methods=["POST"])
+    params = json.loads(request.body)
+    try:
+        jsonschema.validate(params, CLONE_HOST_PROPERTY_PARAMS)
+        bk_biz_id = settings.BK_BIZ_ID
+        ip_kwargs = dict(
+            bk_biz_id=bk_biz_id,
+            bk_org_ip=params.get("bk_org_ip", None),
+            bk_dst_ip=params.get("bk_dst_ip", None))
+        client = get_client_by_request(request)
+        results = client.cc.clone_host_property(ip_kwargs)
+        Records.objects.create(**{
+            "operator": request.user.username,
+            "operate_time": datetime.datetime.now(),
+            "operate_action": "克隆主机属性",
+            "operate_status": "SUCCESS" if results.get("result") else "FAILED",
+            "input_params": params,
+            "output_params": results
+        })
+        return JsonResponse(results)
+    except jsonschema.ValidationError as e:
+        response = {"result": False, "code": 1306406, "data": {},
+                    "message": f"Validate Params error, detail: {e.message}"}
+        return JsonResponse(response)
 
 
 def transfer_host_module(request):
@@ -332,20 +255,21 @@ def search_module(request):
 
 def search_biz_inst_topo(request):
     # 查询业务实例拓扑
+    biz_data = {}
     client = get_client_by_request(request)
-    resp = client.cc.search_biz_inst_topo({
-        "bk_biz_id": settings.BK_BIZ_ID,
-    })
-    biz_data = resp["data"][0]
-    set_children = []
-    decode_biz_topo(biz_data, set_children)
-    biz_data.update({"child": set_children})
+    req_data = {"bk_biz_id": settings.BK_BIZ_ID}
+    response = client.cc.search_biz_inst_topo(req_data)
+    if response.get("result"):
+        biz_data = response["data"][0]
+        set_children = []
+        decode_biz_topo(biz_data, set_children)
+        biz_data.update({"child": set_children})
     return JsonResponse(biz_data)
 
 
 def decode_biz_topo(topo, set_children=None):
     """
-
+    解析业务数据
     """
     for topo_child in topo["child"]:
         if topo_child["bk_obj_id"] == "set":
@@ -412,3 +336,202 @@ def record_lists(request):
 @register.filter
 def get_item(dict: dict, key):
     return dict.get(key, key)
+
+
+def deploy_page(request):
+    """
+    操作记录页面
+    """
+    return render(request, "home_application/deploy.html")
+
+
+def get_job_plan_list(request):
+    """
+    查询执行方案列表
+    """
+    bk_biz_id = request.GET.get("bk_biz_id")
+    start = request.GET.get("start", 0)
+    length = request.GET.get("length", 20)
+
+    if not bk_biz_id:
+        return JsonResponse({
+            "result": True,
+            "message": "",
+            "code": 200,
+            "data": {
+                "total": 0,
+                "results": [],
+            }
+        })
+
+    client = get_client_by_request(request)
+
+    kwargs = {
+        "bk_biz_id": bk_biz_id,
+        "start": start,
+        "length": length,
+    }
+    result = client.jobv3.get_job_plan_list(kwargs)
+
+    if not result["result"]:
+        return JsonResponse({
+            "result": False,
+            "message": result["message"],
+            "code": result["code"],
+            "data": {
+                "total": 0,
+                "results": [],
+            }
+        })
+
+    for plan in result["data"]["data"]:
+        plan["create_time"] = datetime.datetime.fromtimestamp(plan["create_time"]).strftime("%Y-%m-%d %H:%M:%S")
+        plan["last_modify_time"] = datetime.datetime.fromtimestamp(plan["last_modify_time"]).strftime("%Y-%m-%d %H:%M:%S")
+
+    return JsonResponse({
+        "result": True,
+        "message": "",
+        "code": 200,
+        "data": {
+            "total": result["data"]["total"],
+            "results": result["data"]["data"],
+        }
+    })
+
+
+def get_job_plan_detail(request):
+    """
+    查询执行方案详情
+    """
+    bk_biz_id = request.GET.get("bk_biz_id")
+    job_plan_id = request.GET.get("job_plan_id")
+
+    client = get_client_by_request(request)
+
+    kwargs = {
+        "bk_biz_id": bk_biz_id,
+        "job_plan_id": job_plan_id,
+    }
+
+    result = client.jobv3.get_job_plan_detail(kwargs)
+    return JsonResponse({
+        "result": True,
+        "message": "",
+        "code": 200,
+        "data": result["data"],
+    })
+
+
+def execute_job_plan(request):
+    """
+    执行作业执行方案
+    """
+    params = json.loads(request.body)
+
+    bk_biz_id = params["bk_biz_id"]
+    job_plan_id = params["job_plan_id"]
+    global_var_list = params["global_var_list"]
+
+    client = get_client_by_request(request)
+
+    cleaned_global_var_list = []
+
+    for global_var in global_var_list:
+        if global_var["type"] == 3:
+            cleaned_global_var_list.append({
+                "id": global_var["id"],
+                "server": {"ip_list": [{"ip": global_var["value"], "bk_cloud_id": 0}]}
+            })
+        else:
+            cleaned_global_var_list.append({
+                "id": global_var["id"],
+                "value": global_var["value"],
+            })
+
+    kwargs = {
+        "bk_biz_id": bk_biz_id,
+        "job_plan_id": job_plan_id,
+        "global_var_list": cleaned_global_var_list,
+    }
+
+    result = client.jobv3.execute_job_plan(kwargs)
+
+    # 执行结果记录
+    Records.objects.create(**{
+        "operator": request.user.username,
+        "operate_time": datetime.datetime.now(),
+        "operate_action": "执行作业执行方案",
+        "operate_status": "SUCCESS" if result.get("result") else "FAILED",
+        "input_params": kwargs,
+        "output_params": result
+    })
+
+    if not result["result"]:
+        return JsonResponse({
+            "result": False,
+            "message": result["message"],
+            "code": result["code"],
+            "data": None,
+        })
+
+    JobExecuteHistory.objects.create(
+        bk_biz_id=bk_biz_id,
+        job_plan_id=job_plan_id,
+        job_instance_id=result["data"]["job_instance_id"],
+        job_instance_name=result["data"]["job_instance_name"],
+    )
+
+    return JsonResponse({
+        "result": True,
+        "message": "",
+        "code": 200,
+        "data": result["data"],
+    })
+
+
+def get_job_execute_history_list(request):
+    """
+    查询作业执行历史
+    """
+    bk_biz_id = request.GET.get("bk_biz_id", 0)
+
+    histories = JobExecuteHistory.objects.filter(bk_biz_id=bk_biz_id).order_by("-job_instance_id")
+
+    results = []
+
+    client = get_client_by_request(request)
+
+    for history in histories:
+        if not history.is_finished:
+            # 组件API请求参数
+            kwargs = {
+                "bk_biz_id": bk_biz_id,
+                "job_instance_id": history.job_instance_id,
+            }
+            result = client.jobv3.get_job_instance_status(kwargs)
+            if result["result"]:
+                history.is_finished = result["data"]["finished"]
+                history.status = result["data"]["job_instance"]["status"]
+                history.create_time = result["data"]["job_instance"]["create_time"]
+                history.start_time = result["data"]["job_instance"]["start_time"]
+                history.end_time = result["data"]["job_instance"]["end_time"]
+                history.total_time = result["data"]["job_instance"]["total_time"]
+                history.save()
+
+        results.append({
+            "job_plan_id": history.job_plan_id,
+            "job_instance_id": history.job_instance_id,
+            "job_instance_name": history.job_instance_name,
+            "status": history.get_status_display(),
+            "create_time": datetime.datetime.fromtimestamp(history.create_time/1000).strftime("%Y-%m-%d %H:%M:%S") if history.create_time else None,
+            "start_time": datetime.datetime.fromtimestamp(history.start_time/1000).strftime("%Y-%m-%d %H:%M:%S") if history.start_time else None,
+            "end_time": datetime.datetime.fromtimestamp(history.end_time/1000).strftime("%Y-%m-%d %H:%M:%S") if history.end_time else None,
+            "total_time": history.total_time,
+        })
+
+    return JsonResponse({
+        "result": True,
+        "message": "",
+        "code": 200,
+        "data": results,
+    })

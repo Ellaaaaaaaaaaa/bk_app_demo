@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head %}
+    <title>{% trans "游戏发布" %}</title>
+    {{ block.super }}
+    <!-- 引入 bk-magic-vue 组件库样式 -->
+    <link rel="stylesheet" href="https://magicbox.bk.tencent.com/static_api/v3/components_vue/2.0/bk-magic-vue.css">
+{% endblock %}
+
+{% block content %}
+    <div id="app" class="page-content">
+        <h3>选择业务</h3>
+
+        <bk-select v-model="bizID" searchable style="width: 250px;" :clearable="false" @change="loadBizData">
+            <bk-option v-for="option in bizList"
+                :key="option.id"
+                :id="option.id"
+                :name="option.name">
+            </bk-option>
+        </bk-select>
+
+        <h3>方案列表</h3>
+        <bk-table style="margin-top: 15px;" :data="jobPlanList">
+            <bk-table-column label="方案ID" prop="id"></bk-table-column>
+            <bk-table-column label="方案名称" prop="name"></bk-table-column>
+            <bk-table-column label="创建人" prop="creator"></bk-table-column>
+            <bk-table-column label="创建时间" prop="create_time"></bk-table-column>
+            <bk-table-column label="更新人" prop="last_modify_user"></bk-table-column>
+            <bk-table-column label="更新时间" prop="last_modify_time" ></bk-table-column>
+            <bk-table-column label="操作" width="150">
+                <template slot-scope="props">
+                    <bk-button class="mr10" theme="primary" text @click="showExecuteDialog(props.row)">去执行</bk-button>
+                </template>
+            </bk-table-column>
+        </bk-table>
+
+        <hr>
+        <h3>执行历史</h3>
+
+        <bk-button theme="default" @click="getJobExecuteHistoryList" class="mr10">刷新</bk-button>
+
+        <bk-table style="margin-top: 15px;" :data="jobExecuteHistoryList">
+            <bk-table-column label="作业实例ID" prop="job_instance_id"></bk-table-column>
+            <bk-table-column label="作业实例名称" prop="job_instance_name"></bk-table-column>
+            <bk-table-column label="方案ID" prop="job_plan_id"></bk-table-column>
+            <bk-table-column label="状态" prop="status"></bk-table-column>
+            <bk-table-column label="创建时间" prop="create_time"></bk-table-column>
+            <bk-table-column label="开始时间" prop="start_time" ></bk-table-column>
+            <bk-table-column label="结束时间" prop="end_time"></bk-table-column>
+            <bk-table-column label="执行耗时(ms)" prop="total_time" ></bk-table-column>
+            <bk-table-column label="操作" width="150">
+                <template slot-scope="props">
+                    <bk-button class="mr10" theme="primary" text @click="jumpToJobInstanceDetail(props.row)">查看执行详情</bk-button>
+                </template>
+            </bk-table-column>
+        </bk-table>
+
+
+        <bk-dialog v-model="executeDialogVisible"
+            theme="primary"
+            :mask-close="false"
+            title="方案执行参数填写"
+            @confirm="executeJobPlan">
+            <bk-form>
+                <bk-form-item :label="variable.description" v-for="variable in jobPlanDetail.global_var_list" v-if="variable.used">
+                    <bk-input v-model="variable.value" :placeholder="variable.name"></bk-input>
+                </bk-form-item>
+            </bk-form>
+
+        </bk-dialog>
+
+    </div>
+{% endblock %}
+
+{% block extra_block %}
+    <!-- 引入 Vue -->
+    <script src="https://cdn.bootcss.com/vue/2.7.14/vue.js"></script>
+    <!-- 引入 bk-magic-vue 组件库 -->
+    <script src="https://magicbox.bk.tencent.com/static_api/v3/components_vue/2.0/bk-magic-vue.js"></script>
+    <script type="text/javascript">
+        window.onload = function () {
+            new Vue({
+                el: '#app',
+                data () {
+                    return {
+                        bizID: '',
+                        bizList: [],
+                        data: [],
+                        jobPlanList: [],
+                        executeDialogVisible: false,
+                        jobPlanDetail: {},
+                        jobExecuteHistoryList: [],
+                    }
+                },
+                created() {
+                    $.get("{{ SITE_URL }}search_business/", (data) => {
+                        data.data.info.forEach(biz => {
+                            this.bizList.push({
+                                id: biz.bk_biz_id,
+                                name: '[' + biz.bk_biz_id + '] ' + biz.bk_biz_name,
+                            })
+                        })
+                    });
+                },
+                methods: {
+                    showExecuteDialog (row) {
+                        this.executeDialogVisible = true;
+                        this.jobPlanDetail = {};
+                        $.ajax({
+                            url: "{{ SITE_URL }}get_job_plan_detail/",
+                            type: "get",
+                            data: {
+                                bk_biz_id: this.bizID,
+                                job_plan_id: row.id,
+                            },
+                            success: (response) => {
+                                this.jobPlanDetail = response.data;
+                            },
+                        })
+                    },
+                    getJobPlanList() {
+                        $.ajax({
+                            url: "{{ SITE_URL }}get_job_plan_list/",
+                            type: "get",
+                            data: {
+                                bk_biz_id: this.bizID,
+                            },
+                            success: (response) => {
+                                this.jobPlanList = response.data.results;
+                            },
+                        })
+                    },
+                    executeJobPlan() {
+                        $.ajax({
+                            contentType: 'application/json',
+                            url: "{{ SITE_URL }}execute_job_plan/",
+                            type: "post",
+                            data: JSON.stringify({
+                                bk_biz_id: this.bizID,
+                                job_plan_id: this.jobPlanDetail.id,
+                                global_var_list: this.jobPlanDetail.global_var_list,
+                            }),
+                            success: (response) => {
+                                if (response.result) {
+                                    this.$bkNotify({
+                                        message: "方案执行提交成功! 实例ID: " + response.data.job_instance_id,
+                                        theme: "success",
+                                        offsetY: 80,
+                                    })
+                                    this.getJobExecuteHistoryList();
+                                } else {
+                                    this.$bkNotify({
+                                        message: "方案执行失败: " + response.message,
+                                        theme: "error",
+                                        offsetY: 80,
+                                    })
+                                }
+                            },
+                        })
+                    },
+                    getJobExecuteHistoryList() {
+                        $.ajax({
+                            url: "{{ SITE_URL }}get_job_execute_history_list/",
+                            type: "get",
+                            data: {
+                                bk_biz_id: this.bizID,
+                            },
+                            success: (response) => {
+                                this.jobExecuteHistoryList = response.data;
+                            },
+                        })
+                    },
+                    loadBizData() {
+                        this.getJobPlanList();
+                        this.getJobExecuteHistoryList();
+                    },
+                    jumpToJobInstanceDetail(row) {
+                        window.open("https://job.ce.bktencent.com/biz/" + this.bizID + "/execute/task/" + row.job_instance_id, '_blank');
+                    }
+                }
+            })
+        }
+    </script>
+{% endblock %}
