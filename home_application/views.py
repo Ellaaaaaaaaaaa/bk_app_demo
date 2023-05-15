@@ -11,7 +11,7 @@ an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express o
 specific language governing permissions and limitations under the License.
 """
 import datetime
-import jsonschema
+#import jsonschema
 import json
 import logging
 from blueking.component.shortcuts import get_client_by_request
@@ -168,35 +168,35 @@ def get_host_base_info(request):
                                                                  })
 
 
-def clone_host_property(request):
-    """
-    机器属性管理 克隆主机属性
-    """
-    if not request.method.lower() == "post":
-        return HttpResponseNotAllowed(permitted_methods=["POST"])
-    params = json.loads(request.body)
-    try:
-        jsonschema.validate(params, CLONE_HOST_PROPERTY_PARAMS)
-        bk_biz_id = settings.BK_BIZ_ID
-        ip_kwargs = dict(
-            bk_biz_id=bk_biz_id,
-            bk_org_ip=params.get("bk_org_ip", None),
-            bk_dst_ip=params.get("bk_dst_ip", None))
-        client = get_client_by_request(request)
-        results = client.cc.clone_host_property(ip_kwargs)
-        Records.objects.create(**{
-            "operator": request.user.username,
-            "operate_time": datetime.datetime.now(),
-            "operate_action": "克隆主机属性",
-            "operate_status": "SUCCESS" if results.get("result") else "FAILED",
-            "input_params": params,
-            "output_params": results
-        })
-        return JsonResponse(results)
-    except jsonschema.ValidationError as e:
-        response = {"result": False, "code": 1306406, "data": {},
-                    "message": f"Validate Params error, detail: {e.message}"}
-        return JsonResponse(response)
+# def clone_host_property(request):
+#     """
+#     机器属性管理 克隆主机属性
+#     """
+#     if not request.method.lower() == "post":
+#         return HttpResponseNotAllowed(permitted_methods=["POST"])
+#     params = json.loads(request.body)
+#     try:
+#         jsonschema.validate(params, CLONE_HOST_PROPERTY_PARAMS)
+#         bk_biz_id = settings.BK_BIZ_ID
+#         ip_kwargs = dict(
+#             bk_biz_id=bk_biz_id,
+#             bk_org_ip=params.get("bk_org_ip", None),
+#             bk_dst_ip=params.get("bk_dst_ip", None))
+#         client = get_client_by_request(request)
+#         results = client.cc.clone_host_property(ip_kwargs)
+#         Records.objects.create(**{
+#             "operator": request.user.username,
+#             "operate_time": datetime.datetime.now(),
+#             "operate_action": "克隆主机属性",
+#             "operate_status": "SUCCESS" if results.get("result") else "FAILED",
+#             "input_params": params,
+#             "output_params": results
+#         })
+#         return JsonResponse(results)
+#     except jsonschema.ValidationError as e:
+#         response = {"result": False, "code": 1306406, "data": {},
+#                     "message": f"Validate Params error, detail: {e.message}"}
+#         return JsonResponse(response)
 
 
 def transfer_host_module(request):
