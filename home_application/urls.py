@@ -25,7 +25,7 @@ urlpatterns = (
     #### 主机操作
     url(r"^get_host_base_info/$", views.get_host_base_info, name="主机信息"),
 
-    url(r"^clone_host_property/$", views.clone_host_property, name="克隆属性"),
+    #url(r"^clone_host_property/$", views.clone_host_property, name="克隆属性"),
 
     url(r"^transfer_host_module/$", views.transfer_host_module, name="转移模块"),
 
