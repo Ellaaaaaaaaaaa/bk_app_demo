@@ -107,6 +107,7 @@ LOGGING = get_logging_config_dict(locals())
 # 注意：请在首次提测和上线前修改，之后的修改将不会生效
 INIT_SUPERUSER = []
 
+
 # 使用mako模板时，默认打开的过滤器：h(过滤html)
 MAKO_DEFAULT_FILTERS = ["h"]
 
@@ -136,6 +137,7 @@ if IS_USE_CELERY:
     INSTALLED_APPS = locals().get("INSTALLED_APPS", [])
     INSTALLED_APPS += ("django_celery_beat", "django_celery_results")
     CELERY_ENABLE_UTC = False
+    DJANGO_CELERY_BEAT_TZ_AWARE = False
     CELERYBEAT_SCHEDULER = "django_celery_beat.schedulers.DatabaseScheduler"
 
 # remove disabled apps
@@ -164,5 +166,3 @@ if locals().get("DISABLED_APPS"):
         locals()[_key] = tuple(
             [_item for _item in locals()[_key] if not _item.startswith(_app + ".")]
         )
-
-DJANGO_CELERY_BEAT_TZ_AWARE = False

@@ -9,6 +9,7 @@ from blueking.component.shortcuts import get_client_by_user, get_client_by_reque
 from celery.schedules import crontab
 from celery.task import periodic_task
 
+
 from home_application.models import MonitorAlert
 
 logger = logging.getLogger('auditLogger')
@@ -102,7 +103,7 @@ def _get_monitor_alert(request=None):
         client = get_client_by_request(request)
     else:
         # 需要应用拥有用户认证豁免权限
-        client = get_client_by_user("admin")
+        client = get_client_by_user("teacher")
 
     # 获取业务列表
     result = client.cc.search_business()
@@ -150,12 +151,12 @@ def _save_monitor_alert_to_db(alerts: List[Dict]):
                 "category_display": alert["category_display"],
                 "status": alert["status"],
                 "is_shielded": alert["is_shielded"],
-                "assignee": alert["assignee"],
+                "assignee": alert["assignee"] or [],
                 "is_ack": bool(alert["is_ack"]),
                 "is_handled": alert["is_handled"],
                 "strategy_id": alert["strategy_id"],
                 "strategy_name": alert["strategy_name"],
-                "ack_operator": alert["ack_operator"],
+                "ack_operator": alert["ack_operator"]or "",
                 "bk_cloud_id": alert["bk_cloud_id"],
                 "ip": alert["ip"],
                 "create_time": datetime.fromtimestamp(alert["create_time"]),
@@ -167,7 +168,7 @@ def _save_monitor_alert_to_db(alerts: List[Dict]):
         )
 
 
-@periodic_task(run_every=crontab(minute=5))
+@periodic_task(run_every=crontab(minute='*'))
 def sync_monitor_alert_data(request=None):
     """
     同步并保存告警数据

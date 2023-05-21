@@ -56,7 +56,6 @@ class JobExecuteHistory(models.Model):
     end_time = models.BigIntegerField(verbose_name="执行结束时间(毫秒)", null=True)
     total_time = models.IntegerField(verbose_name="总耗时(毫秒)", null=True)
 
-
 class MonitorAlert(models.Model):
     """
     告警信息表
