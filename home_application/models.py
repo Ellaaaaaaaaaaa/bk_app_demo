@@ -55,3 +55,35 @@ class JobExecuteHistory(models.Model):
     start_time = models.BigIntegerField(verbose_name="开始执行时间(毫秒)", null=True)
     end_time = models.BigIntegerField(verbose_name="执行结束时间(毫秒)", null=True)
     total_time = models.IntegerField(verbose_name="总耗时(毫秒)", null=True)
+
+
+class MonitorAlert(models.Model):
+    """
+    告警信息表
+    """
+    SEVERITY_CHOICES = [(1, "致命"), (2, "预警"), (3, "提醒")]
+    STATUS_CHOICES = [("ABNORMAL", "未恢复"), ("RECOVERED", "已恢复"), ("CLOSED", "已关闭")]
+
+    bk_biz_id = models.IntegerField(verbose_name="业务ID")
+    alert_id = models.CharField(verbose_name="告警ID", max_length=64, unique=True)
+    name = models.CharField(verbose_name="告警名称", max_length=255)
+    severity = models.IntegerField(verbose_name="告警级别", choices=SEVERITY_CHOICES)
+    category = models.CharField(verbose_name="分类", max_length=255)
+    category_display = models.CharField(verbose_name="分类名称", max_length=255)
+    status = models.CharField(verbose_name="当前状态", choices=STATUS_CHOICES, max_length=16)
+    is_shielded = models.BooleanField(verbose_name="是否被屏蔽中", default=False)
+    assignee = models.JSONField(verbose_name="负责人", default=list)
+    is_ack = models.BooleanField(verbose_name="是否确认", default=False)
+    is_handled = models.BooleanField(verbose_name="是否处理", default=False)
+    strategy_id = models.IntegerField(verbose_name="策略ID")
+    strategy_name = models.CharField(verbose_name="策略名称", max_length=255)
+    ack_operator = models.CharField(verbose_name="确认人", max_length=64, default="", blank=True)
+
+    bk_cloud_id = models.IntegerField(verbose_name="云区域ID", null=True)
+    ip = models.CharField(verbose_name="目标IP", max_length=128, blank=True, null=True)
+
+    begin_time = models.DateTimeField(verbose_name="告警开始时间")
+    create_time = models.DateTimeField(verbose_name="告警生成时间")
+    latest_time = models.DateTimeField(verbose_name="最近异常时间")
+    end_time = models.DateTimeField(verbose_name="结束时间", null=True)
+    update_time = models.DateTimeField(verbose_name="更新时间")

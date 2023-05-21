@@ -11,23 +11,33 @@ an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express o
 specific language governing permissions and limitations under the License.
 """
 import datetime
-#import jsonschema
+# import jsonschema
 import json
 import logging
+
+from django.db.models import Count
+
 from blueking.component.shortcuts import get_client_by_request
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.template.defaulttags import register
 from django.http import JsonResponse, HttpResponseNotAllowed
-from .models import Records, JobExecuteHistory
+from .models import Records, JobExecuteHistory, MonitorAlert
 
 from home_application.schema import (
     CLONE_HOST_PROPERTY_PARAMS,
 )
 from django.conf import settings
 
+from .tasks import sync_monitor_alert_data
+
 logger = logging.getLogger('auditLogger')
 
+# 告警级别
+ALERT_SEVERITY = {1: "致命", 2: "预警", 3: "提醒"}
+
+# 告警状态
+ALERT_STATUS = {"RECOVERED": "已恢复", "CLOSED": "已关闭", "ABNORMAL": "未恢复"}
 """
     配置平台接口信息
     https://apigw.ce.bktencent.com/docs/component-api/default/CC/intro
@@ -386,7 +396,8 @@ def get_job_plan_list(request):
 
     for plan in result["data"]["data"]:
         plan["create_time"] = datetime.datetime.fromtimestamp(plan["create_time"]).strftime("%Y-%m-%d %H:%M:%S")
-        plan["last_modify_time"] = datetime.datetime.fromtimestamp(plan["last_modify_time"]).strftime("%Y-%m-%d %H:%M:%S")
+        plan["last_modify_time"] = datetime.datetime.fromtimestamp(plan["last_modify_time"]).strftime(
+            "%Y-%m-%d %H:%M:%S")
 
     return JsonResponse({
         "result": True,
@@ -523,9 +534,12 @@ def get_job_execute_history_list(request):
             "job_instance_id": history.job_instance_id,
             "job_instance_name": history.job_instance_name,
             "status": history.get_status_display(),
-            "create_time": datetime.datetime.fromtimestamp(history.create_time/1000).strftime("%Y-%m-%d %H:%M:%S") if history.create_time else None,
-            "start_time": datetime.datetime.fromtimestamp(history.start_time/1000).strftime("%Y-%m-%d %H:%M:%S") if history.start_time else None,
-            "end_time": datetime.datetime.fromtimestamp(history.end_time/1000).strftime("%Y-%m-%d %H:%M:%S") if history.end_time else None,
+            "create_time": datetime.datetime.fromtimestamp(history.create_time / 1000).strftime(
+                "%Y-%m-%d %H:%M:%S") if history.create_time else None,
+            "start_time": datetime.datetime.fromtimestamp(history.start_time / 1000).strftime(
+                "%Y-%m-%d %H:%M:%S") if history.start_time else None,
+            "end_time": datetime.datetime.fromtimestamp(history.end_time / 1000).strftime(
+                "%Y-%m-%d %H:%M:%S") if history.end_time else None,
             "total_time": history.total_time,
         })
 
@@ -534,4 +548,97 @@ def get_job_execute_history_list(request):
         "message": "",
         "code": 200,
         "data": results,
+    })
+
+
+def get_alert_monitor(request):
+    """
+    获取告警数据
+    """
+    # 获取参数
+    params = json.loads(request.body)
+    bk_biz_id = params.get("bk_biz_id")
+    filter_condition = params.get("filter")
+    page = params.get("page", 1)
+    page_size = params.get("page_size", 20)
+
+    # 查询告警数据
+    queryset = MonitorAlert.objects.filter(bk_biz_id=bk_biz_id)
+    if filter_condition:
+        queryset = MonitorAlert.objects.filter(**filter_condition)
+
+    # 统计告警总数
+    total = queryset.count()
+
+    # 分页
+    paginator = Paginator(queryset, page_size)
+    queryset = paginator.get_page(page)
+
+    # 序列化
+    alert_data = [
+        {
+            "alert_id": item.alert_id,
+            "name": item.name,
+            "severity": ALERT_SEVERITY.get(item.severity),
+            "ip": item.ip if item.ip else "--",
+            "category_display": item.category_display,
+            "status": ALERT_STATUS.get(item.status),
+            "is_shieled": "已屏蔽" if item.is_shielded else "未屏蔽",
+            "is_ack": "已处理" if item.is_ack else "未处理",
+            "is_handled": "已处理" if item.is_handled else "未处理",
+            "ack_operator": item.ack_operator if item.ack_operator else "--",
+            "strategy_name": item.strategy_name,
+            "bk_biz_id": item.bk_biz_id,
+        }
+        for item in queryset
+    ]
+
+    return JsonResponse({
+        "result": True,
+        "code": 0,
+        "message": "success",
+        "data": {"total": total, "results": alert_data}
+    })
+
+
+def get_alert_monitor_group_data(request):
+    """
+    获取过滤并分组后的告警数据（用于可视化）
+    """
+    # 获取参数
+    params = json.loads(request.body)
+    filter_condition = params.get("filter")
+    bk_biz_id = params.get("bk_biz_id")
+
+    queryset = MonitorAlert.objects.filter(bk_biz_id=bk_biz_id)
+    if filter_condition:
+        queryset = MonitorAlert.objects.filter(**filter_condition)
+
+    # 查询告警聚合数据
+    data = {"name": [], "ip": [], "status": [], "severity": []}
+    for alert_type in data.keys():
+        queryset = queryset.values(alert_type).annotate(count=Count(alert_type))
+
+        # 序列化
+        for item in queryset:
+            if alert_type == "name":
+                data[alert_type].append({"name": item["name"], "value": item["count"]})
+            if alert_type == "ip":
+                data[alert_type].append({"name": item["ip"] or "--", "value": item["count"]})
+            if alert_type == "status":
+                data[alert_type].append({"name": ALERT_STATUS.get(item["status"]), "value": item["count"]})
+            if alert_type == "severity":
+                data[alert_type].append({"name": ALERT_SEVERITY.get(item["severity"]), "value": item["count"]})
+
+    return JsonResponse({"result": True, "code": 0, "message": "", "data": data})
+
+
+def refresh_alert_data(request):
+    """
+    刷新告警数据
+    """
+    data = sync_monitor_alert_data(request)
+    return JsonResponse({
+        "result": True,
+        "data": data,
     })

@@ -40,4 +40,7 @@ urlpatterns = (
     url(r"^get_job_plan_detail/$", views.get_job_plan_detail, name="查询执行方案详情"),
     url(r"^execute_job_plan/$", views.execute_job_plan, name="执行作业执行方案"),
     url(r"^get_job_execute_history_list/$", views.get_job_execute_history_list, name="查询作业执行历史"),
+    url(r"^refresh_alert_data/", views.refresh_alert_data, name="刷新告警数据"),
+    url(r"^get_alert_monitor/", views.get_alert_monitor, name="告警数据"),
+    url(r"^get_alert_monitor_group_data/", views.get_alert_monitor_group_data, name="可视化告警数据"),
 )

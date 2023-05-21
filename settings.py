@@ -71,3 +71,6 @@ except ImportError as err:
 for _setting in dir(_module):
     if _setting == _setting.upper():
         locals()[_setting] = getattr(_module, _setting)
+
+# Celery 消息队列设置 Redis
+BROKER_URL = "redis://localhost:6379/0"

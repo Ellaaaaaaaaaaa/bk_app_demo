@@ -343,6 +343,11 @@ class CollectionsMonitorV3(object):
             path='/api/c/compapi{bk_api_ver}/monitor_v3/search_alarm_strategy/',
             description=u'查询告警策略'
         )
+        self.search_alert = ComponentAPI(
+            client=self.client, method='POST',
+            path='/api/c/compapi{bk_api_ver}/monitor_v3/search_alert/',
+            description=u'查询告警信息'
+        )
         self.search_event = ComponentAPI(
             client=self.client, method='POST',
             path='/api/c/compapi{bk_api_ver}/monitor_v3/search_event/',

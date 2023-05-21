@@ -1,34 +1,3 @@
-{#{% extends "base.html" %}#}
-{#{% load i18n %}#}
-{#{% block head %}#}
-{#	<title>{%trans "蓝鲸开发框架" %}</title>#}
-{#	{{ block.super }}#}
-{#{% endblock %}#}
-{##}
-{#{% block content %}#}
-{#    <div class="home-page">#}
-{#    	<div class="page-arrow">#}
-{#			<div class="container">#}
-{#				<!-- 蓝鲸智云开发框架说明  Start -->#}
-{#				<div class="tc title-word">#}
-{#					<p>{%trans "欢迎使用蓝鲸智云PaaS平台" %}</p>#}
-{#				</div>#}
-{#				<div class="tc title-word-second">#}
-{#					<p>{%trans "蓝鲸智云开发框架" %}<small class="pl10">{%trans "助力你的自动化" %}</small></p>#}
-{#				</div>#}
-{#				<hr class="cutting-line">#}
-{#				<div class="tc frame-explain-text">#}
-{#					<p>{%trans "您现在打开的应用是由蓝鲸智云示例代码生成的，该示例代码称为“SaaS开发框架”。" %}</p>#}
-{#					<p>{%trans "蓝鲸智云PaaS平台提供了完善的前后台开发框架、调度引擎、公共组件等模块，帮助业务的产品和技术人员快速构建低成本、免运维的支撑工具和运营系统。" %}</p>#}
-{#					<p>{%trans "若想体验快速开发应用的功能，请前往" %}<a class="developer-center" href="{{ BK_DEV_URL }}" target="_blank">{%trans "“开发者中心”" %}</a>{%trans "。" %}</p>#}
-{#				</div>#}
-{#				<!-- 蓝鲸智云开发框架说明  End -->#}
-{#			</div>#}
-{#		</div>#}
-{#    </div>#}
-{#{% endblock %}#}
-{##}
-
 {% extends "base.html" %}
 {% load i18n %}
 {% block head %}
@@ -47,15 +16,18 @@
             display: none;
         }
 
-        .bk-dropdown-menu {
-            margin: 10px 5px 10px 0;
-        }
-
         .td-bg {
             color: #f0f0f0;
             width: 300px;
             background-color: #d1d0d0;
             font-weight: bold;
+        }
+        .analysis-label {
+            width: 8px;
+            height:21px;
+            background-color: #3C96FF;
+            margin-right: 10px;
+            margin-bottom: 10px;
         }
     </style>
 {% endblock %}
@@ -66,7 +38,7 @@
             <div style=" margin: 10px 0 0 20px">
                 <span style="font-weight: bold;">选择业务</span>
                 <div style="width: 200px">
-                    <select id="search_biz_inst_topo" class="bk-form-select" onchange="search_biz_inst_topo()">
+                    <select id="search_biz_inst_topo" class="bk-form-select" onchange="onBizChange()">
                     </select>
                 </div>
             </div>
@@ -83,14 +55,14 @@
         <div class="bk-tab2 bk-tab2-small" style="margin-left: 280px" id="bk-tab2">
             <div class="bk-tab2-head">
                 <ul class="bk-tab2-nav">
-                    <li class="tab2-nav-item active">业务资源</li>
-                    <li class="tab2-nav-item" style="display: none">服务实例</li>
-                    <li class="tab2-nav-item" style="display: none">业务拓扑</li>
+                    <li class="tab2-nav-item active">主机列表</li>
                     <li class="tab2-nav-item">业务信息</li>
+                    <li class="tab2-nav-item" id="monitor-info">告警信息</li>
+                    <li class="tab2-nav-item" id="monitor-analysis">告警分析</li>
                 </ul>
             </div>
             <div class="bk-tab2-content">
-                <!-- 业务资源 -->
+                <!-- 主机列表 -->
                 <div class="bk-tab2-pane p15 active">
                     <div class="f12">
                         <div style="min-width: 80%">
@@ -147,17 +119,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- 服务实例 -->
-                <div class="bk-tab2-pane p15">
-                    <div class="f12"></div>
-                </div>
-                <!-- 业务拓扑 -->
-                <div class="bk-tab2-pane p15">
-                    <div class="bk-collapse-panel">
-                        <div id="biztop" style="width: 920px; height:980px"></div>
-                    </div>
-                </div>
-                <!-- 节点信息 -->
+                <!-- 业务信息 -->
                 <div class="bk-tab2-pane p15">
                     <div class="bk-collapse-panel">
                         <div class="panel-header" role="tab">
@@ -175,12 +137,102 @@
                         <div id="node-information2"></div>
                     </div>
                 </div>
+                <!-- 告警信息-->
+                <div class="bk-tab2-pane p15">
+                    <div id="filter-menu" style=" width: 100%; height:50px;">
+                    <select id="alert-status" name="validation_select" class="bk-form-select" style="width: 150px; height: 30px; margin-left: 20px; margin-top: 10px">
+                        <option value="">请选择告警状态</option>
+                        <option value="ABNORMAL">未恢复</option>
+                        <option value="RECOVERED">已恢复</option>
+                        <option value="CLOSED">已关闭</option>
+                    </select>
+                    <select id="alert-shielded" name="validation_select" class="bk-form-select" style="width: 150px; height: 30px; margin-left: 20px; margin-top: 10px">
+                        <option value="">请选择是否屏蔽</option>
+                        <option value="false">未屏蔽</option>
+                        <option value="true">已屏蔽</option>
+                    </select>
+                    <select id="alert-level" name="validation_select" class="bk-form-select" style="width: 150px; height: 30px; margin-left: 20px; margin-top: 10px">
+                        <option value="">请选择告警级别</option>
+                        <option value="1">致命</option>
+                        <option value="2">预警</option>
+                        <option value="3">提醒</option>
+                    </select>
+
+                    <input id="alert-ip" type="text" class="bk-form-input" placeholder="请输入过滤IP" style="width:150px; height:30px; margin-left:20px; margin-top: 10px">
+
+                    <button id="search-button" class="bk-button bk-primary bk-button-small" title="开始搜索" style="margin-left:20px; margin-top: 10px; display: inline"><i class="bk-icon icon-search"></i> 开始搜索</button>
+
+                    <div id="display-table-column" class="bk-dropdown-menu" style="position: absolute; margin-left: 30px; margin-top: 10px">
+                        <button class="bk-button bk-primary is-icon bk-dropdown-trigger" style="height:32px; line-height:32px;">
+                            <i class="bk-icon icon-cog-shape"></i> 显示列
+                        </button>
+                        <div class="bk-dropdown-content left-align" style="top: 39px;">
+                            <ul class="bk-dropdown-list" style="max-height: 400px" id="check-list">
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+                    <table class="bk-table" id="warning-list">
+                        <thead>
+                        <tr>
+                            <th>告警ID</th>
+                            <th style="width: 190px">告警名称</th>
+                            <th>告警级别</th>
+                            <th>目标IP</th>
+                            <th>分类名称</th>
+                            <th>状态</th>
+                            <th>是否屏蔽</th>
+                            <th>是否处理</th>
+                            <th>是否确认</th>
+                            <th>确认人</th>
+                            <th style="width: 190px">策略名称</th>
+                            <th>业务名称</th>
+                        </tr>
+                        </thead>
+                        <tbody id="alert-data">
+                        </tbody>
+                    </table>
+                    <div class="bk-table-pagination-wrapper">
+                    <div class="bk-table-pagination bk-page bk-page-align-right bk-page-small">
+                        <div class="bk-page-list-wrapper" style="float: right; margin-right: 40px">
+                            <ul class="bk-page-list" id="tablePaging"></ul>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <!-- 告警分析 -->
+                <div class="bk-tab2-pane p15">
+                    <div style="display: flex;">
+                        <label class="analysis-label"></label> 告警名称分布
+                        <label class="analysis-label" style="margin-left: 47.2%"></label> 告警IP分布
+                    </div>
+
+                    <div style="display: flex;">
+                        <div class="bk-collapse-panel" style="width: 50%">
+                            <div id="alert_name" style="width:550px; height: 300px;"></div>
+                        </div>
+                        <div class="bk-collapse-panel" style="width: 50%; margin-left: 100px">
+                            <div id="alert_ip" style="width:550px;  height: 300px;"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; margin-top: 10px">
+                        <label class="analysis-label"></label> 告警等级分布
+                        <label class="analysis-label" style="margin-left: 47.2%"></label> 告警状态分布
+                    </div>
+                    <div style="display: flex">
+                        <div class="bk-collapse-panel" style="width: 50%">
+                            <div id="alert_level" style="width: 550px; height: 300px;"></div>
+                        </div>
+                        <div class="bk-collapse-panel" style="width: 50%; margin-left: 100px">
+                            <div id="alert_status" style="width: 550px; height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
-
-    <div id="os_type" style="display: none;">{{ os_type }}</div>
 {% endblock %}
 
 {% block extra_block %}
@@ -196,37 +248,20 @@
     <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/bkDropdownMenu-1.0/js/bkDropdownMenu.js"></script>
     <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/bkTab-1.0/js/bkTab.js"></script>
     <script>
-        var os_type = JSON.parse(document.getElementById("os_type").innerText);
-        $.ajax({
-            url: "{{ SITE_URL }}search_business/",
-            method: 'post',
-            success: function (data) {
-                var biz_topo = "";
-                data.data.info.forEach(biz => {
-                    biz_topo += '<option value=' + biz.bk_biz_id + '>[' + biz.bk_biz_id + '] ' + biz.bk_biz_name + '</option>';
-                    sessionStorage.setItem(biz.bk_biz_id, JSON.stringify({
-                        "bk_biz_name": biz.bk_biz_name,
-                        "time_zone": biz.time_zone,
-                        "language": biz.language,
-                        "life_cycle": biz.life_cycle,
-                        "create_time": biz.create_time,
-                        "bk_biz_maintainer": biz.bk_biz_maintainer,
-                        "bk_biz_developer": biz.bk_biz_developer,
-                        "bk_biz_productor": biz.bk_biz_productor,
-                        "bk_biz_tester": biz.bk_biz_tester,
-                        "operator": biz.operator
-                    }));
-                })
-                document.getElementById("search_biz_inst_topo").innerHTML = biz_topo;
-                node_infomation();
-
-            }
-        });
-        // 选项卡
+        var tabIndex = 0;
+        // 页内选项卡初始化
         $('.bk-tab2').bkTab({
             tabTriggers: '.tab2-nav-item',
             tabPanels: '.bk-tab2-pane',
             onTabChange: function (index, tab) {
+                tabIndex = index;
+                if (index === 2) {
+                    render_alert_table()
+                } else if (index === 3) {
+                    render_alert_chart()
+                } else {
+                }
+
             }
         });
 
@@ -254,7 +289,10 @@
             }
         )
 
-        //表格(DataTables)
+        $('#display-table-column').bkDropdown({
+            align: 'left'
+        });
+
         var language = {
             search: "{% trans '搜索：' %}",
             lengthMenu: "{% trans '每页显示 _MENU_ 记录' %}",
@@ -267,6 +305,51 @@
                 next: "{% trans '下一页' %}",
             }
         }
+    </script>
+    <script>
+        var bk_biz_id;
+        var biz_modules = [];
+        var bizNameMapping = {}
+        const os_type = JSON.parse('{{ os_type | safe }}')
+
+        // 业务列表查询
+        $.ajax({
+            url: "{{ SITE_URL }}search_business/",
+            method: 'post',
+            success: function (data) {
+                var biz_topo = "";
+                data.data.info.forEach(biz => {
+                    biz_topo += '<option value=' + biz.bk_biz_id + '>[' + biz.bk_biz_id + '] ' + biz.bk_biz_name + '</option>';
+                    sessionStorage.setItem(biz.bk_biz_id, JSON.stringify({
+                        "bk_biz_name": biz.bk_biz_name,
+                        "time_zone": biz.time_zone,
+                        "language": biz.language,
+                        "life_cycle": biz.life_cycle,
+                        "create_time": biz.create_time,
+                        "bk_biz_maintainer": biz.bk_biz_maintainer,
+                        "bk_biz_developer": biz.bk_biz_developer,
+                        "bk_biz_productor": biz.bk_biz_productor,
+                        "bk_biz_tester": biz.bk_biz_tester,
+                        "operator": biz.operator
+                    }));
+                    bizNameMapping[biz.bk_biz_id] = biz.bk_biz_name
+                })
+                document.getElementById("search_biz_inst_topo").innerHTML = biz_topo;
+                onBizChange();
+            }
+        });
+
+        // 业务变化时重载页面
+        function onBizChange() {
+            bk_biz_id = parseInt($("#search_biz_inst_topo option:selected").val());
+            // 重新渲染业务信息
+            node_infomation();
+            // 重新查询业务拓扑
+            search_biz_inst_topo();
+            // 重新查询主机信息
+            businessInfo.ajax.reload()
+        }
+
         // 业务主机资源
         var businessInfo = $("#hosts").DataTable({
             sProcessing: '<img alt="loadding" src="https://magicbox.bk.tencent.com/static_api/v3/components/loading1/images/loading_2_36x36.gif">',//这里很重要，如果你的加载中是文字，则直接写上文字即可，如果是gif的图片，使用img标签就可以加载
@@ -275,19 +358,22 @@
             pageLength: 10, //每页显示几条数据
             language: language, //汉化
             serverSide: true,
+            searchDelay: 500,
+            deferLoading: 0,
             ajax: {
                 url: '{{ SITE_URL }}list_biz_hosts/',
                 method: "post",
                 dataType: 'json',
                 data: function (d) {
                     return JSON.stringify({
+                        "bk_biz_id": bk_biz_id,
                         "bk_set_id": $(".set.open").attr("set_id"),
                         "bk_module_id": $(".module.open").attr("module_id"),
                         "start": d.start,
-                        "length": d.length
+                        "length": d.length,
+                        "search": d.search.value
                     });
                 },
-
             },
             columns: [
                 {
@@ -343,8 +429,6 @@
             ],
         });
 
-        search_biz_inst_topo();
-
         // 业务信息，不做强要求
         function node_infomation() {
             var bk_biz_id = $('#search_biz_inst_topo option:selected').val();
@@ -362,7 +446,6 @@
 
         // 克隆主机属性
         function clone_host_property(event) {
-
             var src_ip = event.parentNode.parentNode.childNodes[3].textContent
             var dialog = new bkDialog({
                 type: 'dialog',
@@ -377,6 +460,7 @@
                         url: '{{ SITE_URL }}clone_host_property/',
                         method: 'post',
                         data: JSON.stringify({
+                            "bk_biz_id": bk_biz_id,
                             "bk_org_ip": src_ip,
                             "bk_dst_ip": dst_ip
                         }),
@@ -386,15 +470,12 @@
                                     message: "克隆主机失败：" + json.message,
                                     theme: 'error'
                                 });
-
                             } else {
-
                                 var successMessage = new bkMessage({
                                     message: '克隆主机' + src_ip + "的属性至" + dst_ip + "成功",
                                     theme: 'success'
                                 });
                                 businessInfo.ajax.reload()
-
                             }
                         }
                     });
@@ -411,7 +492,6 @@
                 // 点击转移按钮，发送数据到转移接口
                 options += '<option value="' + item.bk_module_id + '">' + item.bk_module_name + '</option>'
             })
-
             var dialog = new bkDialog({
                 type: 'dialog',
                 width: 400,
@@ -425,6 +505,7 @@
                         url: "{{ SITE_URL }}transfer_host_module/",
                         method: 'POST',
                         data: JSON.stringify({
+                            "bk_biz_id": bk_biz_id,
                             "bk_host_id": host_id,
                             "bk_module_id": [module_id],
                             "is_increment": 0
@@ -453,16 +534,15 @@
 
         }
 
-        var biz_modules = new Array()
-
+        // 业务拓扑树
         function search_biz_inst_topo() {
-            businessInfo.ajax.reload();
             biz_modules = []
             $.ajax({
                 url: "{{ SITE_URL }}search_biz_inst_topo/",
                 method: 'post',
+                dataType: 'json',
                 data: JSON.stringify({
-                    "bk_biz_id": parseInt($("#search_biz_inst_topo option:selected").val()),
+                    "bk_biz_id": bk_biz_id,
                 }),
                 success: function (json) {
                     var bk_ul_tops = '<li class="folder open"><a href="javascript:;"><i class="bk-icon icon-apps"></i> 业-'
@@ -498,7 +578,385 @@
                     document.getElementById("bk-ul-tops").innerHTML = bk_ul_tops + sub_str1 + '</li>';
                 }
             });
+        }
 
+        // 获取告警列表
+        function render_alert_table(page=1) {
+            filter = get_alert_filter()
+
+            var page_size = 10;
+            $.ajax({
+                url: "{{ SITE_URL }}get_alert_monitor/",
+                method: "post",
+                dataType: "json",
+                data: JSON.stringify({
+                    "filter": filter,
+                    "page": page,
+                    "page_size": page_size,
+                    "bk_biz_id": parseInt($("#search_biz_inst_topo option:selected").val()),
+                }),
+                success: function (data) {
+                    // 渲染表格
+                    var html = ``
+                    data.data.results.forEach(function (item) {
+                        html += `
+                            <tr>
+                            <td>` + item.alert_id + `</td>
+                            <td>` + item.name + `</td>
+                            <td>` + item.severity + `</td>
+                            <td>` + item.ip + `</td>
+                            <td>` + item.category_display + `</td>
+                            <td>` + item.status + `</td>
+                            <td>` + item.is_shieled + `</td>
+                            <td>` + item.is_ack + `</td>
+                            <td>` + item.is_handled + `</td>
+                            <td>` + item.ack_operator + `</td>
+                            <td>` + item.strategy_name + `</td>
+                            <td>` + bizNameMapping[item.bk_biz_id] + `</td>
+                            </tr>
+                        `;
+                    })
+                    document.getElementById("alert-data").innerHTML = html;
+
+                    renderAlertPaging(Math.ceil(data.data.total / page_size), page);
+                    initAlertFilterSelect();
+                }
+            });
+        }
+
+        // 渲染告警列表
+        function renderAlertPaging(pageSize, currentPage) {
+            var subPaging = "";
+            if(pageSize <= 6){
+                for(let i = 0; i < pageSize; i++) {
+                    var iscurPage = "";
+                    if ((i+1) === currentPage) iscurPage = "cur-page";
+                    subPaging += `<li class="page-item ${iscurPage}" value="${i+1}"><a href="javascript:void(0);" class="page-button">${i+1}</a></li>`;
+                }
+            } else {
+                var iscurPage1 = "";
+                if (1 === currentPage) iscurPage1 = "cur-page";
+                subPaging += `<li class="page-item ${iscurPage1}" value="1"><a href="javascript:void(0);" class="page-button">1</a></li>`;
+
+
+                if (currentPage < 5) {
+                    for(let j = 2; j < 6; j++) {
+                        var iscurPage2 = "";
+                        if (j === currentPage) iscurPage2 = "cur-page";
+                        subPaging += `<li class="page-item ${iscurPage2}" value="${j}"><a href="javascript:void(0);" class="page-button">${j}</a></li>`;
+                    }
+                    subPaging += `<li class="page-item" value="-3"><a href="javascript:void(0);" class="page-button">···</a></li>`;
+                } else if (currentPage >= 5 && (pageSize - 5) < currentPage) {
+                    subPaging += `<li class="page-item" value="-2"><a href="javascript:void(0);" class="page-button">···</a></li>`;
+
+                    for(let j = pageSize-5; j < pageSize; j++) {
+                        var iscurPage2 = "";
+                        if (j === currentPage) iscurPage2 = "cur-page";
+                        subPaging += `<li class="page-item ${iscurPage2}" value="${j}"><a href="javascript:void(0);" class="page-button">${j}</a></li>`;
+                    }
+                } else {
+                    subPaging += `<li class="page-item" value="-2"><a href="javascript:void(0);" class="page-button">···</a></li>`;
+
+                    for(let j = currentPage - 2; j < currentPage + 3; j++) {
+                        if (j !== pageSize) {
+                            var iscurPage2 = "";
+                            if (j === currentPage) iscurPage2 = "cur-page";
+                            subPaging += `<li class="page-item ${iscurPage2}" value="${j}"><a href="javascript:void(0);" class="page-button">${j}</a></li>`;
+                        }
+                    }
+
+                    subPaging += `<li class="page-item" value="-3"><a href="javascript:void(0);" class="page-button">···</a></li>`;
+                }
+
+                var iscurPage3 = "";
+                if (pageSize === currentPage) iscurPage3 = "cur-page";
+                subPaging += `<li class="page-item ${iscurPage3}" value="${pageSize}"><a href="javascript:void(0);" class="page-button">${pageSize}</a></li>`;
+            }
+
+            var isDisabledLiLeft = "";
+            var isDisabledLiRight = "";
+            if(parseInt(currentPage) === 1) isDisabledLiLeft = "disabled";
+            if(pageSize === currentPage) isDisabledLiRight = "disabled";
+
+            var pagingHTML = `<li class="page-item ${isDisabledLiLeft}" value="0">
+                <a href="javascript:void(0);" class="page-button">
+                    <i class="bk-icon icon-angle-left"></i>
+                </a>
+            </li>
+            ${subPaging}
+            <li class="page-item ${isDisabledLiRight}" value="-1">
+                <a href="javascript:void(0);" class="page-button">
+                    <i class="bk-icon icon-angle-right"></i>
+                </a>
+            </li>`;
+            document.getElementById("tablePaging").innerHTML = pagingHTML;
+
+            // 分页告警数据
+            $(".page-item").click(function () {
+                var page = $(this).attr('value');
+                $(".page-item").removeClass("cur-page");
+                $(this).attr("class", "page-item cur-page");
+                if (!page && currentPage === 1)
+                    page = 1;
+                else if (!page && currentPage > 1)
+                    page = currentPage - 1;
+                else if (page===-1 && currentPage !== pageSize)
+                    page = currentPage + 1;
+                else if (page===-1 && currentPage === pageSize)
+                    page = currentPage;
+                else if (page===-2)
+                    page = currentPage - 5;
+                else if (page===-3)
+                    page = currentPage + 5;
+                render_alert_table(page);
+            });
+        }
+
+        // 初始化告警列表筛选
+        function initAlertFilterSelect() {
+            var headTitle = "";
+            var tableTh = $("#warning-list").find("thead").find("th");
+            for (let i = 0; i < tableTh.length; i++) {
+                var inputHTML = "";
+                if ("false" === localStorage.getItem("warning-check-list:" + i)) {
+                    inputHTML = `<input type="checkbox"  value="${i}">`;
+                    $(`#warning-list th:nth-child(${i + 1})`).hide();
+                    $(`#warning-list td:nth-child(${i + 1})`).hide();
+                } else {
+                    inputHTML = `<input type="checkbox"  checked="checked" value="${i}">`;
+                }
+                headTitle += `<li><a href="javascript:;"><label class="warning-list-label">${inputHTML} ${tableTh[i].innerText}</label></a></li>`;
+            }
+            $("#check-list").html(headTitle);
+
+            $(".warning-list-label input").on('click', function () {
+                var index = parseInt($(this).attr('value'));
+                var isChecked = $(this).prop('checked');
+                var thChild = `#warning-list th:nth-child(${index + 1})`;
+                var tdChild = `#warning-list td:nth-child(${index + 1})`;
+                localStorage.setItem("warning-check-list:" + index, `${isChecked}`);
+                if (isChecked) {
+                    $(thChild).show();
+                    $(tdChild).show();
+                } else {
+                    $(thChild).hide();
+                    $(tdChild).hide();
+                }
+            });
+        }
+
+        // 点击告警列表筛选按钮
+        $("#search-button").click(function () {
+            if (tabIndex === 2) {
+                render_alert_table();
+            } else if (tabIndex === 3) {
+                render_alert_chart();
+            }
+        })
+
+        // 获取告警过滤条件
+        function get_alert_filter() {
+            var status = $("#alert-status option:selected").val()
+            var is_shielded = $("#alert-shielded option:selected").val()
+            var severity = $("#alert-level option:selected").val()
+            var ip = $("#alert-ip").val()
+            // 处理过滤条件
+            var filter = {}
+            if (status.length > 0) {
+                filter["status"] = status
+            }
+            if (is_shielded.length > 0) {
+                filter["is_shielded"] = is_shielded === "true"
+            }
+            if (severity.length > 0) {
+                filter["severity"] = severity
+            }
+            if (ip.length > 0) {
+                filter["ip"] = ip
+            }
+            return filter
+        }
+
+        // 渲染告警图标
+        function render_alert_chart() {
+            // 获取告警数据
+            $.ajax({
+                url: "{{ SITE_URL }}get_alert_monitor_group_data/",
+                method: "post",
+                dataType: "json",
+                data: JSON.stringify({
+                    "bk_biz_id": bk_biz_id,
+                }),
+                async: false,
+                success: function (data) {
+                    let chart_data = data.data
+                    let alert_ip_chart = echarts.init(document.getElementById("alert_ip"))
+                    alert_ip_chart.setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '告警IP <br/>{b} : {c} ({d}%)'
+                        },
+                        legend: {
+                            type: 'scroll',
+                            orient: 'vertical',
+                            right: 30,
+                            top: 100,
+                            length: 10
+                        },
+                        series: [
+                            {
+                                type: 'pie',
+                                radius: ['40%', '55%'],
+                                avoidLabelOverlap: false,
+                                itemStyle: {
+                                    borderRadius: 0,
+                                    borderColor: '#fff',
+                                    borderWidth: 1
+                                },
+                                label: {
+                                    show: false,
+                                    position: 'center'
+                                },
+                                emphasis: {
+                                    label: {
+                                        show: true,
+                                        fontSize: 20
+                                    }
+                                },
+                                labelLine: {
+                                    show: false
+                                },
+                                data: chart_data["ip"]
+                            }
+                        ]
+                    })
+                    let alert_name_chart = echarts.init(document.getElementById("alert_name"))
+                    alert_name_chart.setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '告警名称 <br/>{b} : {c} ({d}%)'
+                        },
+                        legend: {
+                            type: 'scroll',
+                            orient: 'vertical',
+                            right: 10,
+                            top: 100,
+                            formatter: function (name) {
+                                if (name.length > 10) {
+                                    return name.substring(0, 10) + "..."
+                                } else {
+                                    return name
+                                }
+                            }
+                        },
+                        series: [
+                            {
+                                type: 'pie',
+                                radius: ['40%', '55%'],
+                                avoidLabelOverlap: false,
+                                itemStyle: {
+                                    borderRadius: 0,
+                                    borderColor: '#fff',
+                                    borderWidth: 1
+                                },
+                                label: {
+                                    show: false,
+                                    position: 'center'
+                                },
+                                emphasis: {
+                                    label: {
+                                        show: true,
+                                        fontSize: 20
+                                    }
+                                },
+                                labelLine: {
+                                    show: true
+                                },
+                                data: chart_data["name"]
+                            }
+                        ]
+                    });
+                    let alert_level_chart = echarts.init(document.getElementById("alert_level"))
+                    alert_level_chart.setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '告警等级 <br/>{b} : {c} ({d}%)'
+                        },
+                        legend: {
+                            type: 'scroll',
+                            orient: 'vertical',
+                            right: 50,
+                            top: 100,
+                        },
+                        series: [
+                            {
+                                type: 'pie',
+                                radius: ['40%', '55%'],
+                                avoidLabelOverlap: false,
+                                itemStyle: {
+                                    borderRadius: 0,
+                                    borderColor: '#fff',
+                                    borderWidth: 1
+                                },
+                                label: {
+                                    show: false,
+                                    position: 'center'
+                                },
+                                emphasis: {
+                                    label: {
+                                        show: true,
+                                        fontSize: 20,
+                                    }
+                                },
+                                labelLine: {
+                                    show: false
+                                },
+                                data: chart_data["severity"]
+                            }
+                        ]
+                    });
+                    var alert_status_chart = echarts.init(document.getElementById("alert_status"))
+                    alert_status_chart.setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '告警状态 <br/>{b} : {c} ({d}%)'
+                        },
+                        legend: {
+                            type: 'scroll',
+                            orient: 'vertical',
+                            right: 50,
+                            top: 100,
+                            bottom: 20
+                        },
+                        series: [
+                            {
+                                type: 'pie',
+                                radius: ['40%', '55%'],
+                                avoidLabelOverlap: false,
+                                itemStyle: {
+                                    borderRadius: 0,
+                                    borderColor: '#fff',
+                                    borderWidth: 1
+                                },
+                                label: {
+                                    show: false,
+                                    position: 'center'
+                                },
+                                emphasis: {
+                                    label: {
+                                        show: true,
+                                        fontSize: 20,
+                                    }
+                                },
+                                labelLine: {
+                                    show: false
+                                },
+                                data: chart_data["status"]
+                            }
+                        ]
+                    });
+                }
+            })
         }
     </script>
 {% endblock %}
