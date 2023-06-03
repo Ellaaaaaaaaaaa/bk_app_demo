@@ -14,7 +14,7 @@ specific language governing permissions and limitations under the License.
 from typing import Any
 
 import datetime
-# import jsonschema
+import jsonschema
 
 import json
 import logging
@@ -31,7 +31,7 @@ from blueking.component.shortcuts import get_client_by_request
 # )
 from django.conf import settings
 
-from .tasks import sync_monitor_alert_data
+from .tasks import sync_monitor_alert_data, get_sops_task_status
 
 logger = logging.getLogger('auditLogger')
 
@@ -755,3 +755,289 @@ def refresh_alert_data(request):
         "result": True,
         "data": data,
     })
+
+
+# def sops_get_template_list(request):
+#     """
+#     获取sops流程模板ID
+#     """
+#     bk_biz_id = request.GET.get("bk_biz_id")
+#     response = get_client_by_request(request).sops.get_template_list(
+#         bk_biz_id=bk_biz_id
+#     )
+#     return JsonResponse(response)
+#
+#
+# def list_free_hosts(request):
+#     """
+#     获取所有空闲机
+#     """
+#     bk_biz_id = request.GET.get("bk_biz_id")
+#     client = get_client_by_request(request)
+#     internal_module_result = client.cc.get_biz_internal_module(bk_biz_id=bk_biz_id)
+#     if not internal_module_result["result"]:
+#         return {
+#             "result": False,
+#             "data": {},
+#             "message": internal_module_result["message"],
+#         }
+#     modules = internal_module_result["data"]["module"]
+#     free_module_id = None
+#     for module in modules:
+#         if module["bk_module_name"] == "空闲机":
+#             free_module_id = module["bk_module_id"]
+#             break
+#     if not free_module_id:
+#         return {"result": False, "data": {}, "message": "空闲机模块不存在"}
+#     host_kwargs = {
+#         "bk_biz_id": bk_biz_id,
+#         "bk_module_ids": [free_module_id],
+#         "page": {"start": 0, "limit": 1000},
+#     }
+#     response = client.cc.list_biz_hosts(**host_kwargs)
+#     if not response ["result"]:
+#         return {"result": False, "data": {}, "message": response["message"]}
+#     return JsonResponse(response)
+#
+#
+# def sops_create_and_execute_task(request) :
+#     """
+#     创建任务
+#     """
+#     kwargs = json.loads(request.body)
+#     try:
+#         jsonschema.validate(kwargs, SOPS_CREATE_AND_EXECUTE_TASK_PARAMS)
+#     except jsonschema. ValidationError as e:
+#         response = {
+#             "result": False,
+#             "code": 1306406,
+#             "data": {},
+#             "message": f"Validate Params error, detail: {e.message}",
+#         }
+#         return JsonResponse (response)
+#     else:
+#         host_id = int(kwargs.pop("host_id"))
+#         response = get_client_by_request(request).sops.create_task(**kwargs)
+#         if response ["result"]:
+#             # 启动任务
+#             task_id =response["data"]["task_id"]
+#             bk_biz_id = kwargs.get("bk_biz_id")
+#             sops_start_task(request, bk_biz_id, task_id)
+#             # 记录操作日志
+#             kwargs.update({"task_id": task_id, "host_id": host_id})
+#             save_record_log(request, kwargs, response)
+#         return JsonResponse ( response)
+#
+#
+#
+# SOPS_CREATE_AND_EXECUTE_TASK_PARAMS = {
+#     "type": "object",
+#     "required": ["name", "bk_biz_id", "template_id", "host_id"],
+#     "properties": {
+#         "name": {"type": "string"},
+#         "bk_biz_id": {"type": "integer"},
+#         "template_id": {"type": "integer"},
+#         "host_id": {"type": "integer"}
+#     },
+# }
+#
+#
+# def sops_start_task(request, bk_biz_id, task_id) :
+#     """
+#     启动任务
+#     """
+#     kwargs = {
+#                  "bk_biz_id": bk_biz_id,
+#                  "task_id": task_id,
+#     }
+#     response = get_client_by_request(request).sops.start_task(**kwargs)
+#     if response["result"]:
+#         logger.info("[Start Task] Success")
+#     else:
+#         logger.error(f"[Start Task] Failed, detail: {response}")
+#     return response[" result"]
+#
+#
+# def save_record_log(request, kwargs, response) :
+#     """
+#     保存故障机替换的日志
+#     """
+#     try:
+#         Records.objects.create(
+#             **{
+#                 "operator": request.user.username ,
+#                 "operate_time": datetime.datetime.now() ,
+#                 "operate_action": "故障机切换" ,
+#                 "operate_status": "RUNNING" ,
+#                 "input_params": kwargs,
+#                 "output_params": response ,
+#             }
+#         )
+#     except Exception as e:
+#         logger.error(f"[Record Save] Failed, detail: {e}")
+#     else:
+#         logger.info("[Record Save] Success")
+#
+#
+# def sops_status_task(request):
+#     """
+#     获取任务执行状态，记录操作日志中状态内容
+#     """
+#     host_id = int(request.GET.get("host_id"))
+#     # 查询执行日志状态结果
+#     record = (
+#         Records.objects.filter(operate_action="故障机切换", input_params_host_id=host_id)
+#         .order_by("-id")
+#         .first()
+#     )
+#     status = record.operate_status if record else "READY"
+#     response = {"result": True, "data": {"task_status": status}, "code": 0}
+#     return JsonResponse(response)
+#
+#
+# def refresh_sops_task_status(request) :
+#     """
+#     刷新任务状态
+#     """
+#     get_sops_task_status()
+#     return JsonResponse({"result": True})
+
+def refresh_sops_task_status(request):
+    """
+    刷新任务状态
+    """
+    get_sops_task_status()
+    return JsonResponse({"result": True})
+
+
+def sops_status_task(request):
+    """
+    获取任务执行状态，记录操作日志中状态内容
+    """
+    host_id = int(request.GET.get("host_id"))
+    # 查询执行日志状态结果
+    record = (
+        Records.objects.filter(operate_action="故障机切换", input_params=host_id)
+        .order_by("-id")
+        .first()
+    )
+    status = record.operate_status if record else "READY"
+    response = {"result": True, "data": {"task_status": status}, "code": 0}
+    return JsonResponse(response)
+
+
+def sops_get_template_list(request):
+    """
+    获取sops流程模板ID
+    """
+    bk_biz_id = request.GET.get("bk_biz_id")
+    response = get_client_by_request(request).sops.get_template_list(
+        bk_biz_id=bk_biz_id
+    )
+    return JsonResponse(response)
+
+
+def list_free_hosts(request):
+    """
+    获取所有空闲机
+    """
+    bk_biz_id = request.GET.get("bk_biz_id")
+    client = get_client_by_request(request)
+    internal_module_result = client.cc.get_biz_internal_module(bk_biz_id=bk_biz_id)
+    if not internal_module_result["result"]:
+        return {
+            "result": False,
+            "data": {},
+            "message": internal_module_result["message"],
+        }
+    modules = internal_module_result["data"]["module"]
+    free_module_id = None
+    for module in modules:
+        if module["bk_module_name"] == "空闲机":
+            free_module_id = module["bk_module_id"]
+            break
+    if not free_module_id:
+        return {"result": False, "data": {}, "message": "空闲机模块不存在"}
+    host_kwargs = {
+        "bk_biz_id": bk_biz_id,
+        "bk_module_ids": [free_module_id],
+        "page": {"start": 0, "limit": 1000},
+    }
+    response = client.cc.list_biz_hosts(**host_kwargs)
+    if not response ["result"]:
+        return {"result": False, "data": {}, "message": response["message"]}
+    return JsonResponse(response)
+
+
+def sops_start_task(request, bk_biz_id, task_id):
+    """
+    启动任务
+    """
+    kwargs = {
+                 "bk_biz_id": bk_biz_id,
+                 "task_id": task_id,
+    }
+    response = get_client_by_request(request).sops.start_task(**kwargs)
+    if response["result"]:
+        logger.info("[Start Task] Success")
+    else:
+        logger.error(f"[Start Task] Failed, detail: {response}")
+    return response["result"]
+
+
+def save_record_log(request, kwargs, response):
+    """
+    保存故障机替换的日志
+    """
+    try:
+        Records.objects.create(
+            **{
+                "operator": request.user.username,
+                "operate_time": datetime.datetime.now(),
+                "operate_action": "故障机切换",
+                "operate_status": "RUNNING",
+                "input_params": kwargs,
+                "output_params": response,
+            }
+        )
+    except Exception as e:
+        logger.error(f"[Record Save] Failed, detail: {e}")
+    else:
+        logger.info("[Record Save] Success")
+
+
+def sops_create_and_execute_task(request):
+    """
+    创建任务
+    """
+    kwargs = json.loads(request.body)
+    host_id = int(kwargs.pop("host_id"))
+    response = get_client_by_request(request).sops.create_task(**kwargs)
+    if not response["result"]:
+        return JsonResponse({"result": False})
+
+    # 启动任务
+    task_id = response["data"]["task_id"]
+    bk_biz_id = kwargs.get("bk_biz_id")
+    start_result = sops_start_task(request, bk_biz_id, task_id)
+    if start_result is False:
+        return JsonResponse({"result": False})
+
+    # 记录操作日志
+    kwargs.update({"task_id": task_id, "host_id": host_id})
+    save_record_log(request, kwargs, response)
+    return JsonResponse(response)
+
+
+SOPS_CREATE_AND_EXECUTE_TASK_PARAMS = {
+    "type": "object",
+    "required": ["name", "bk_biz_id", "template_id", "host_id"],
+    "properties": {
+        "name": {"type": "string"},
+        "bk_biz_id": {"type": "integer"},
+        "template_id": {"type": "integer"},
+        "host_id": {"type": "integer"}
+    },
+}
+
+

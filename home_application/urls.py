@@ -44,4 +44,11 @@ urlpatterns = (
     url(r"^refresh_alert_data/", views.refresh_alert_data, name="刷新告警数据"),
     url(r"^get_alert_monitor/", views.get_alert_monitor, name="告警数据"),
     url(r"^get_alert_monitor_group_data/", views.get_alert_monitor_group_data, name="可视化告警数据"),
+
+    # 标准运维
+    url(r"^sops_get_template_list/$", views.sops_get_template_list, name="SOPS流程模板列表"),
+    url(r"^list_free_hosts/$", views.list_free_hosts, name="查询主机列表"),
+    url(r"^sops_create_and_execute_task/$", views.sops_create_and_execute_task, name="SOPS根据流程模板ID创建并执行任务"),
+    url(r"^sops_status_task/$", views.sops_status_task, name="查询SOPS任务状态"),
+    url(r"^refresh_sops_task_status/$", views.refresh_sops_task_status, name="刷新SOPS任务状态"),
 )

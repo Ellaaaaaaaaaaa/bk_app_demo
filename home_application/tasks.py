@@ -10,7 +10,7 @@ from celery.schedules import crontab
 from celery.task import periodic_task
 
 
-from home_application.models import MonitorAlert
+from home_application.models import MonitorAlert, Records
 
 logger = logging.getLogger('auditLogger')
 
@@ -176,3 +176,40 @@ def sync_monitor_alert_data(request=None):
     """
     alerts = _get_monitor_alert(request)
     _save_monitor_alert_to_db(alerts)
+
+
+@periodic_task(run_every=crontab())
+def get_sops_task_status():
+    """
+    获取sops标准运维任务执行结果，更新操作日志记录表
+    1.查询操作日志中所有任务ID
+    2.调用SOPS接口，根据任务ID查询任务执行状态
+    3.更新操作日志表数据
+    """
+    queryset = Records.objects.filter(operate_action="故障机切换", operate_status="RUNNING" )
+    for item in queryset:
+        task_id = item.input_params.get("task_id")
+        bk_biz_id = item.input_params.get("bk_biz_id")
+        kwargs = {
+            "bk_biz_id": bk_biz_id,
+            "task_id": task_id
+        }
+
+        client = get_client_by_user("admin")
+        api_response = client.sops.get_task_status(kwargs)
+        if not api_response ["result"]:
+            logger.error(f"[Celery] update record data failed, detail: {api_response['message']}")
+            return
+
+        status = api_response['data']["state"]
+
+        # 更新日志管理数据
+        Records.objects.filter(pk=item.id).update(**{
+            "operator": item.operator ,
+            "operate_time": item.operate_time ,
+            "operate_action": item.operate_action ,
+            "operate_status": status ,
+            "input_params": item.input_params ,
+            "output_params": item.output_params
+        })
+        logger.info(f"[Celery] update record data success")

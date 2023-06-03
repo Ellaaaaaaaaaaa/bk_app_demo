@@ -99,6 +99,13 @@
                                 </div>
                                 <div id="panel-content2" class="panel-body panel-collapse p0 collapse in"
                                      aria-expanded="true" style="">
+                                     <div class="king-notice2 king-notice-success notice-borders" id="alert-message"
+                                         style="display: none; float: right;">
+                                        <i class="fa fa-check-circle"></i>
+                                        <div class="notice-text">
+                                            <p>故障机切换执行成功</p>
+                                        </div>
+                                    </div>
                                     <!-- 表格 -->
                                     <table id="hosts" class="bk-table bk-table-header-bordered">
                                         <thead>
@@ -232,6 +239,35 @@
                 </div>
             </div>
         </div>
+    </div>
+    <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal" id="modal-button"
+        style="display: none">
+    </button>
+    <div class="modal fade in" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="myModalLabel">故障机切换</h4>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <span>故障机IP:</span>
+                        <span id="render-origin-ip" style="margin-left:87px">2</span>
+                    </div>
+                    <div id="select-template">
+                    </div>
+                    <div id="select-target-ip">
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="submit-button">提交更改</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
     </div>
 {% endblock %}
 
@@ -421,9 +457,21 @@
                     width: 120,
                     tatgets: 7,
                     data: "bk_host_id",
-                    render: function (data) {
-                        return '<a class="bk-text-button bk-info" onclick="clone_host_property(this)">克隆属性</a><a class="bk-text-button bk-info" onclick="transfer_host_module(' + data + ')">转移模块</a><a class="bk-text-button bk-info" target="_blank" title="查看详情" href="get_host_base_info/?bk_host_id=' +
-                            data + '">查看详情</a>';
+                    render: function (data, type, row, table) {
+                        var origin_ip = row.bk_host_innerip.toString()
+                        var host_id = row.bk_host_id.toString()
+                        var index = table.row
+                        // 查询操作日志，host_id=host_id, if status == RUNNING 按钮禁用，否则非禁用
+                        var status = get_sops_task_status(host_id)
+                        var operate_html = ''
+                        if (status == "RUNNING" || status == "PENDING") {
+                            operate_html = '<a class="bk-text-button bk-info" onclick="clone_host_property(this)">克隆属性</a><a class="bk-text-button bk-info" onclick="transfer_host_module(' + data + ')">转移模块</a><a class="bk-text-button bk-info" target="_blank" title="查看详情" href="get_host_base_info/?bk_host_id=' +
+                            data + '">查看详情</a><a class="bk-text-button bk-info" style="pointer-events:none; color: rgb(185 181 175);" onclick="translation_machine(`' + origin_ip + '`,' + index + ',' + host_id + ')">切换故障机</a>'
+                        } else {
+                            operate_html = '<a class="bk-text-button bk-info" onclick="clone_host_property(this)">克隆属性</a><a class="bk-text-button bk-info" onclick="transfer_host_module(' + data + ')">转移模块</a><a class="bk-text-button bk-info" target="_blank" title="查看详情" href="get_host_base_info/?bk_host_id=' +
+                            data + '">查看详情</a><a class="bk-text-button bk-info" style="color: #88c3ff;" onclick="translation_machine(`' + origin_ip + '`,' + index + ',' + host_id + ')">切换故障机</a>'
+                        }
+                        return operate_html;
                     }
                 }
             ],
@@ -957,6 +1005,152 @@
                     });
                 }
             })
+        }
+
+        function translation_machine(origin_ip, index, host_id) {
+
+            // 获取SOPS模板列表
+            var sops_template_list = get_sops_templates()
+            // 获取选择的模板
+            var templates = []
+            sops_template_list.data.forEach(function (item) {
+                templates.push(item.id + " " + item.name)
+            })
+
+            var target_ips = get_free_host_list(origin_ip)
+
+            // 获取完成基础变量后，渲染模态框
+            render_modal_info(templates, origin_ip, target_ips)
+            // 模拟点击模态框弹出按钮，触发显示模态框
+            $("#modal-button").click()
+
+            var template_id = ``
+            var target_ip = ``
+            // 点击提交按钮，获取参数内容，创建任务
+            $("#submit-button").click(function () {
+                // 禁用故障机切换按钮 style=pointer-events:none
+                $(`#hosts tbody`).find("tr:eq(" + index + ") td:eq(7) a:eq(3)").attr("style", "pointer-events:none; color: rgb(185 181 175);")
+                template_id = $('#template-id option:selected').val()
+                target_ip = $('#target-ip option:selected').val()
+
+                // 使用选择的流程模板创建任务并执行日志
+                create_and_execute_task(origin_ip, target_ip, template_id, host_id)
+                // 关闭模态框
+                $(".close").click()
+                // 弹出消息
+                $("#alert-message").attr("style", "display:block; float:right;")
+                setInterval(function () {
+                    // 关闭消息
+                    $("#alert-message").attr("style", "display:none")
+                }, 3000)
+            })
+        }
+
+        // 渲染模态框内容
+        function render_modal_info(templates, origin_ip, target_ips) {
+            // 模态框需要渲染的内容 流程模板选择器 全局参数origin_ip target_ip渲染
+            // 渲染流程模板内容
+            var select_template_html = `
+                <p>请选择流程模板ID:
+                <select name="" id="template-id" style="margin-left:30px">
+            `
+            templates.forEach(function (item) {
+                var id, name
+                id = item.split(" ")[0]
+                name = item.split(" ")[1]
+                select_template_html += `<option value="` + id + `">` + name + `</option>`
+            })
+            select_template_html += "</select></p>"
+            document.getElementById("select-template").innerHTML = select_template_html
+
+            // 渲染故障机IP
+            document.getElementById("render-origin-ip").innerHTML = origin_ip
+
+            // 渲染备份机内容
+            var select_target_html = `
+                <p>请选择备份机:
+                <select name="" id="target-ip" style="margin-left:59px">
+            `
+            target_ips.forEach(function (item) {
+                select_target_html += `<option value="` + item + `">` + item + `</option>`
+            })
+            select_target_html += "</select></p>"
+            document.getElementById("select-target-ip").innerHTML = select_target_html
+        }
+
+        // 获取模板列表
+        function get_sops_templates() {
+            var result = ``
+            $.ajax({
+                url: "{{ SITE_URL }}sops_get_template_list/?bk_biz_id=" + parseInt($("#search_biz_inst_topo option:selected").val()),
+                method: "get",
+                // 同步执行
+                async: false,
+                success: function (data) {
+                    result = data
+                }
+            })
+            return result
+        }
+
+        // 使用选择的流程模板ID创建任务
+        function create_and_execute_task(origin_ip, target_ip, template_id, host_id) {
+            var now = new Date()
+            var date = `` + now.getUTCFullYear() + `` + (now.getMonth() + 1) + `` + now.getDate() + `` + now.getHours() + `` + now.getMinutes() + `` + now.getSeconds() + ``
+            $.ajax({
+                url: "{{ SITE_URL }}sops_create_and_execute_task/",
+                method: "post",
+                dataType: "json",
+                data: JSON.stringify({
+                    "name": "new_task_" + date,
+                    "bk_biz_id": parseInt($("#search_biz_inst_topo option:selected").val()),
+                    "template_id": parseInt(template_id),
+                    "host_id": parseInt(host_id),
+                    "constants": {
+                        "${origin_ip}": origin_ip,
+                        "${target_ip}": target_ip
+                    }
+                }),
+                // 同步执行
+                async: false,
+                success: function (data) {
+                }
+            })
+        }
+
+        // 查询任务状态
+        function get_sops_task_status(host_id) {
+            var status = ""
+            $.ajax({
+                url: "{{ SITE_URL }}sops_status_task/?host_id=" + host_id,
+                method: "get",
+                // 同步执行
+                async: false,
+                success: function (data) {
+                    status = data.data.task_status
+                }
+            })
+            return status
+        }
+
+        // 查询空闲机模块中的所有机器
+        function get_free_host_list(origin_ip) {
+            var free_ip_list = []
+            var bk_biz_id = parseInt($("#search_biz_inst_topo option:selected").val())
+            $.ajax({
+                url: '{{ SITE_URL }}list_free_hosts/?bk_biz_id=' + bk_biz_id,
+                method: "get",
+                async: false,
+                success: function (data) {
+                    data.data.info.forEach(function (item) {
+                        if (item.bk_host_innerip != origin_ip) {
+                            free_ip_list.push(item.bk_host_innerip)
+                        }
+                    })
+                }
+
+            })
+            return free_ip_list
         }
     </script>
 {% endblock %}
