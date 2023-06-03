@@ -195,7 +195,7 @@ def get_sops_task_status():
             "task_id": task_id
         }
 
-        client = get_client_by_user("admin")
+        client = get_client_by_user("202130561356X")
         api_response = client.sops.get_task_status(kwargs)
         if not api_response ["result"]:
             logger.error(f"[Celery] update record data failed, detail: {api_response['message']}")

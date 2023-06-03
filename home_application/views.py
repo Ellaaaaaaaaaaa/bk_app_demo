@@ -11,7 +11,6 @@ Unless required by applicable law or agreed to in writing, software distributed 
 an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 """
-from typing import Any
 
 import datetime
 import jsonschema
@@ -26,9 +25,6 @@ from django.http import JsonResponse, HttpResponseNotAllowed
 from .models import Records, JobExecuteHistory, MonitorAlert
 from blueking.component.shortcuts import get_client_by_request
 
-from home_application.schema import (
-    CLONE_HOST_PROPERTY_PARAMS,
-)
 from django.conf import settings
 
 from .tasks import sync_monitor_alert_data, get_sops_task_status
@@ -52,10 +48,10 @@ OPER_METHOD = dict([
     ("PATCH", "修改")
 ])
 
-
 from home_application.schema import (
     CLONE_HOST_PROPERTY_PARAMS,
 )
+
 
 # 开发框架中通过中间件默认是需要登录态的，如有不需要登录的，可添加装饰器login_exempt
 # 装饰器引入 from blueapps.account.decorators import login_exempt
@@ -182,55 +178,6 @@ def list_biz_inst_topo(request):
             "children": sub_children
         })
     return JsonResponse(children)
-
-    # HOST_PROPERTIE_FIELDS 字段格式
-
-
-HOST_PROPERTIE_FIELDS = {
-    "bk_host_innerip": "内网IP",
-    "bk_host_outerip": "外网IP",
-    "bk_os_type": "操作系统类型",
-    "bk_host_name": "主机名称",
-    "bk_os_version": "系统版本",
-    "bk_os_name": "系统名称",
-    "bk_cpu": "CPU核心",
-    "bk_os_bit": "系统位数",
-    "bk_cpu_module": "CPU型号",
-    "bk_mem": "内存大小",
-    "bk_disk": "磁盘大小",
-    "bk_mac": "MAC地址",
-    "create_time": "创建时间",
-    "bk_cpu_architecture": "CPU架构",
-    "bk_host_innerip_v6": "内网IPv6",
-    "bk_host_outerip_v6": "外网IPv6",
-    "bk_agent_id": "GSE Agent ID",
-    "bk_outer_mac": "外网MAC地址",
-    "bk_cloud_vendor": "云厂商",
-    "bk_cloud_host_status": "云主机状态",
-    "bk_cloud_inst_id": "云实例ID",
-    "bk_state": "状态",
-    "import_from": "来源",
-    "bk_province_name": "省份名称",
-    "bk_cloud_id": "云区域ID",
-    "bk_sn": "序列号"
-}
-
-
-def get_host_base_info(request):
-    """
-    获取主机详情
-    """
-    bk_host_id = request.GET.get("bk_host_id", 0)
-    client = get_client_by_request(request)
-
-    response = client.cc.get_host_base_info({"bk_host_id": bk_host_id})
-    # 渲染模板返回
-    host_properties = response.get("data") if response.get("result", False) else []
-
-    return render(request, "home_application/host_detail.html", {"data": host_properties,
-                                                                 "os_type": OS_TYPE,
-                                                                 "fields": settings.HOST_PROPERTIE_FIELDS
-                                                                 })
 
 
 def get_host_base_info(request):
@@ -919,8 +866,8 @@ def sops_status_task(request):
     # 查询执行日志状态结果
     record = (
         Records.objects.filter(operate_action="故障机切换", input_params=host_id)
-        .order_by("-id")
-        .first()
+            .order_by("-id")
+            .first()
     )
     status = record.operate_status if record else "READY"
     response = {"result": True, "data": {"task_status": status}, "code": 0}
@@ -965,7 +912,7 @@ def list_free_hosts(request):
         "page": {"start": 0, "limit": 1000},
     }
     response = client.cc.list_biz_hosts(**host_kwargs)
-    if not response ["result"]:
+    if not response["result"]:
         return {"result": False, "data": {}, "message": response["message"]}
     return JsonResponse(response)
 
@@ -975,8 +922,8 @@ def sops_start_task(request, bk_biz_id, task_id):
     启动任务
     """
     kwargs = {
-                 "bk_biz_id": bk_biz_id,
-                 "task_id": task_id,
+        "bk_biz_id": bk_biz_id,
+        "task_id": task_id,
     }
     response = get_client_by_request(request).sops.start_task(**kwargs)
     if response["result"]:
@@ -1040,5 +987,3 @@ SOPS_CREATE_AND_EXECUTE_TASK_PARAMS = {
         "host_id": {"type": "integer"}
     },
 }
-
-
