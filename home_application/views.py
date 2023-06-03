@@ -26,9 +26,9 @@ from django.http import JsonResponse, HttpResponseNotAllowed
 from .models import Records, JobExecuteHistory, MonitorAlert
 from blueking.component.shortcuts import get_client_by_request
 
-# from home_application.schema import (
-#     CLONE_HOST_PROPERTY_PARAMS,
-# )
+from home_application.schema import (
+    CLONE_HOST_PROPERTY_PARAMS,
+)
 from django.conf import settings
 
 from .tasks import sync_monitor_alert_data, get_sops_task_status
@@ -53,9 +53,9 @@ OPER_METHOD = dict([
 ])
 
 
-# from home_application.schema import (
-#     CLONE_HOST_PROPERTY_PARAMS,
-#
+from home_application.schema import (
+    CLONE_HOST_PROPERTY_PARAMS,
+)
 
 # 开发框架中通过中间件默认是需要登录态的，如有不需要登录的，可添加装饰器login_exempt
 # 装饰器引入 from blueapps.account.decorators import login_exempt
@@ -252,37 +252,38 @@ def get_host_base_info(request):
                                                                  })
 
 
-# def clone_host_property(request):
-#     """
-#     机器属性管理 克隆主机属性
-#     """
-#     if not request.method.lower() == "post":
-#         return HttpResponseNotAllowed(permitted_methods=["POST"])
-#     params = json.loads(request.body)
-#     try:
-#         jsonschema.validate(params, CLONE_HOST_PROPERTY_PARAMS)
-#         bk_biz_id = settings.BK_BIZ_ID
-#         ip_kwargs = dict(
-#             bk_biz_id=bk_biz_id,
-#             bk_org_ip=params.get("bk_org_ip", None),
-#             bk_dst_ip=params.get("bk_dst_ip", None))
-#         client = get_client_by_request(request)
-#         results = client.cc.clone_host_property(ip_kwargs)
-#
-#         # 执行结果记录
-#         Records.objects.create(**{
-#             "operator": request.user.username,
-#             "operate_time": datetime.datetime.now(),
-#             "operate_action": "克隆主机属性",
-#             "operate_status": "SUCCESS" if results.get("result") else "FAILED",
-#             "input_params": params,
-#             "output_params": results
-#         })
-#         return JsonResponse(results)
-#     except jsonschema.ValidationError as e:
-#         response = {"result": False, "code": 1306406, "data": {},
-#                     "message": f"Validate Params error, detail: {e.message}"}
-#         return JsonResponse(response)
+def clone_host_property(request):
+    """
+    机器属性管理 克隆主机属性
+    """
+    if not request.method.lower() == "post":
+        return HttpResponseNotAllowed(permitted_methods=["POST"])
+    params = json.loads(request.body)
+    try:
+        jsonschema.validate(params, CLONE_HOST_PROPERTY_PARAMS)
+        bk_biz_id = settings.BK_BIZ_ID
+        ip_kwargs = dict(
+            bk_biz_id=bk_biz_id,
+            bk_org_ip=params.get("bk_org_ip", None),
+            bk_dst_ip=params.get("bk_dst_ip", None))
+        client = get_client_by_request(request)
+        results = client.cc.clone_host_property(ip_kwargs)
+
+        # 执行结果记录
+        Records.objects.create(**{
+            "operator": request.user.username,
+            "operate_time": datetime.datetime.now(),
+            "operate_action": "克隆主机属性",
+            "operate_status": "SUCCESS" if results.get("result") else "FAILED",
+            "input_params": params,
+            "output_params": results
+        })
+        return JsonResponse(results)
+    except jsonschema.ValidationError as e:
+        response = {"result": False, "code": 1306406, "data": {},
+                    "message": f"Validate Params error, detail: {e.message}"}
+        return JsonResponse(response)
+
 
 def transfer_host_module(request):
     """
