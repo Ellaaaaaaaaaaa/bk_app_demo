@@ -12,6 +12,7 @@ specific language governing permissions and limitations under the License.
 """
 
 from django.conf.urls import url
+from django.urls import include
 
 from . import views
 
@@ -22,7 +23,7 @@ urlpatterns = (
     url(r"^search_biz_inst_topo/$", views.search_biz_inst_topo, name="查询业务实例拓扑"),
     url(r"^list_biz_hosts/$", views.list_biz_hosts, name="业务下的主机"),
 
-    #### 主机操作
+    # 主机操作
     url(r"^get_host_base_info/$", views.get_host_base_info, name="主机信息"),
 
     url(r"^clone_host_property/$", views.clone_host_property, name="克隆属性"),
@@ -51,4 +52,5 @@ urlpatterns = (
     url(r"^sops_create_and_execute_task/$", views.sops_create_and_execute_task, name="SOPS根据流程模板ID创建并执行任务"),
     url(r"^sops_status_task/$", views.sops_status_task, name="查询SOPS任务状态"),
     url(r"^refresh_sops_task_status/$", views.refresh_sops_task_status, name="刷新SOPS任务状态"),
+
 )

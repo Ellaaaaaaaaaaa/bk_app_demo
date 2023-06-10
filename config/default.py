@@ -16,7 +16,7 @@ from blueapps.conf.log import get_logging_config_dict
 
 # 这里是默认的 INSTALLED_APPS，大部分情况下，不需要改动
 # 如果你已经了解每个默认 APP 的作用，确实需要去掉某些 APP，请去掉下面的注释，然后修改
-# INSTALLED_APPS = (
+#INSTALLED_APPS = (
 #     'bkoauth',
 #     # 框架自定义命令
 #     'blueapps.contrib.bk_commands',
@@ -29,7 +29,10 @@ from blueapps.conf.log import get_logging_config_dict
 #     'django.contrib.staticfiles',
 #     # account app
 #     'blueapps.account',
-# )
+#   'django_bkvision',
+#)
+
+
 
 # 请在这里加入你的自定义 APP
 INSTALLED_APPS += (  # noqa
@@ -63,7 +66,7 @@ INSTALLED_APPS += (  # noqa
 # )
 
 # 自定义中间件
-MIDDLEWARE += ()  # noqa
+MIDDLEWARE += ('home_application.middleware.AccessMiddleware',)  # noqa
 
 # 默认数据库AUTO字段类型
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

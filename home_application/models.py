@@ -29,7 +29,6 @@ class Records(models.Model):
     input_params = models.JSONField(null=True, verbose_name="请求参数")
     output_params = models.JSONField(null=True, verbose_name="输出参数")
 
-
 class JobExecuteHistory(models.Model):
     STATUS_CHOICES = [
         (1, "未执行"),
@@ -55,6 +54,7 @@ class JobExecuteHistory(models.Model):
     start_time = models.BigIntegerField(verbose_name="开始执行时间(毫秒)", null=True)
     end_time = models.BigIntegerField(verbose_name="执行结束时间(毫秒)", null=True)
     total_time = models.IntegerField(verbose_name="总耗时(毫秒)", null=True)
+
 
 class MonitorAlert(models.Model):
     """

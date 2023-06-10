@@ -59,6 +59,9 @@
                     <li class="tab2-nav-item">业务信息</li>
                     <li class="tab2-nav-item" id="monitor-info">告警信息</li>
                     <li class="tab2-nav-item" id="monitor-analysis">告警分析</li>
+                    <li class="tab2-nav-item" id="operational-analysis-1">运营分析(iFrame)</li>
+                    <li class="tab2-nav-item" id="operational-analysis-2">运营分析(js-SDK)</li>
+
                 </ul>
             </div>
             <div class="bk-tab2-content">
@@ -237,6 +240,16 @@
                         </div>
                     </div>
                 </div>
+                <div class="bk-tab2-pane p15" style="height: 1000px;">
+                    <iframe
+                    src="http://apps.ce.bktencent.com/bk-vision/embed/?uid=3Ser8wNmhSUdxqHCZrvuyh&bk_app_id=&bk_app_list=['bk-demo-ella1']&name=&show_copyright=True&watermark=True&time_readonly=False&show_time=True&show_refresh=True&start_time=now/d&end_time=now/d&preview=False&hide_toolbox=False&hide_filter=False&panels=&refresh=False"
+                    style="height: 100%;width: 100%;border: 1px solid rgb(220, 222, 229);">
+                    </iframe>
+                </div>
+                <div class="bk-tab2-pane p15" style="height: 1000px;">
+                    <link rel="stylesheet" href="https://staticfile.qq.com/bkvision/p8e3a7f52d95c45d795cb6f90955f2800/latest/main.css"/>
+                    <div id='bkVision' style='width: 100%;min-height: 1000px;'></div>
+                </div>
             </div>
         </div>
     </div>
@@ -283,6 +296,9 @@
     <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/validate-1.14.0/js/jquery.validate.js"></script>
     <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/bkDropdownMenu-1.0/js/bkDropdownMenu.js"></script>
     <script src="https://magicbox.bk.tencent.com/static_api/v3/assets/bkTab-1.0/js/bkTab.js"></script>
+    <script src="https://staticfile.qq.com/bkvision/p8e3a7f52d95c45d795cb6f90955f2800/latest/chunk-vendors.js"></script>
+    <script src="https://staticfile.qq.com/bkvision/p8e3a7f52d95c45d795cb6f90955f2800/latest/chunk-bk-magic-vue.js"></script>
+    <script src="https://staticfile.qq.com/bkvision/p8e3a7f52d95c45d795cb6f90955f2800/latest/main.js"></script>
     <script>
         var tabIndex = 0;
         // 页内选项卡初始化
@@ -1152,5 +1168,22 @@
             })
             return free_ip_list
         }
+    </script>
+    <script>
+        window.BkVisionSDK.init(
+          '#bkVision',
+            '9bxaw2xmbJqLzHEqYGgHBm',
+        {
+          waterMark:{content: 'bk-vision',} , // 谁赢设置
+          apiPrefix: './bkvision/',
+          // 下面配置将覆盖分享设置数据
+          filters: {},// 设置筛选变量默认值
+          show_refresh:true ,// 是否展示刷新按钮
+          show_time:true, // 是否显示时间过滤器
+          time_readonly:false ,//时间过滤器是否制度
+          start_time: now/d, // 时间选择器开始时间
+          end_time: now/d, // 时间选择器结束时间
+
+    });
     </script>
 {% endblock %}
