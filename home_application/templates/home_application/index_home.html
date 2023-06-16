@@ -101,7 +101,7 @@
                                     <h3 data-toggle="collapse" class="panel-title" aria-expanded="true">主机列表</h3>
                                 </div>
                                 <div id="panel-content2" class="panel-body panel-collapse p0 collapse in"
-                                     aria-expanded="true" style="">
+                                     aria-expanded="true" style="width: 100%">
                                      <div class="king-notice2 king-notice-success notice-borders" id="alert-message"
                                          style="display: none; float: right;">
                                         <i class="fa fa-check-circle"></i>
@@ -609,7 +609,7 @@
                     "bk_biz_id": bk_biz_id,
                 }),
                 success: function (json) {
-                    var bk_ul_tops = '<li class="folder open"><a href="javascript:;"><i class="bk-icon icon-apps"></i> 业-'
+                    var bk_ul_tops = '<li class="folder open" style="background: #fff"><a href="javascript:;"><i class="bk-icon icon-apps"></i> 业-'
                         + json.bk_inst_name + '</a><a href="#setOperator" data-toggle="modal" data-target="#setOperator"></a>';
                     var sub_str1 = "";
                     module_nums = 0;
